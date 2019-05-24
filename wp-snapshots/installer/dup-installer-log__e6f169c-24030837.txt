@@ -1,0 +1,770 @@
+********************************************************************************
+* DUPLICATOR-PRO: Install-Log
+* STEP-1 START @ 03:22:43
+* VERSION: 1.3.14
+* NOTICE: Do NOT post to public sites or forums!!
+********************************************************************************
+PACKAGE INFO_ CURRENT SERVER                                | ORIGINAL SERVER
+PHP VERSION__:5.6.40                                        | 7.2.17-0ubuntu0.18.04.1
+OS___________:Linux                                         | Linux
+CREATED______:2019-05-24 03:08:37
+WP VERSION___:5.1.1
+DUP VERSION__:1.3.14
+DB___________:5.6.41
+DB TABLES____:74
+DB ROWS______:652,107
+DB FILE SIZE_:86.77MB
+********************************************************************************
+PHP:		7.2.17-0ubuntu0.18.04.1 | SAPI: apache2handler
+PHP MEMORY:	"4294967296" | SUHOSIN: "disabled"
+SERVER:		"Apache/2.4.29 (Ubuntu)"
+DOC ROOT:	"/var/www/html/dev/njfec"
+DOC ROOT 755:	false
+LOG FILE 644:	true
+REQUEST URL:	"http://localhost/dev/njfec/dup-installer/main.installer.php"
+SAFE MODE :	"0"
+CONFIG MODE :	"NEW"
+--------------------------------------
+PRE-EXTRACT-CHECKS
+--------------------------------------
+- PASS: Apache '.htaccess' not found - no backup needed.
+- PASS: Microsoft IIS 'web.config' not found - no backup needed.
+- PASS: WordFence '.user.ini' not found - no backup needed.
+--------------------------------------
+ARCHIVE SETUP
+--------------------------------------
+NAME:	20190524_njdec_e6f169c9b0af19ee8215_20190524030837_archive.zip
+SIZE:	126.72MB
+
+ZIP:	Shell Exec Unzip
+>>> Starting Shell-Exec Unzip:
+Command: unzip -o -qq '/var/www/html/dev/njfec/20190524_njdec_e6f169c9b0af19ee8215_20190524030837_archive.zip' -d '/var/www/html/dev/njfec' 2>&1
+<<< Shell-Exec Unzip Complete.
+--------------------------------------
+POST-EXTACT-CHECKS
+--------------------------------------
+PERMISSION UPDATES:
+    -DIRS:  '755'
+    -FILES: '644'
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/installer.php' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.tmb/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/README.md' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/index' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/HEAD' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/pack' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/pack/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/pack/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/ee' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/ee/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/objects/ee/025c81a6580745ebebe95bec90d172c11ee343' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/ee/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/35' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/35/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/objects/35/d6c7ace4aa3c9088c488fc421d0715ac5c7b72' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/35/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/info' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/info/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/info/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/28' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/objects/28/86235dcffd2c61b0db91a569910a9e7465d333' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/28/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/objects/28/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/logs/HEAD' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/heads' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/heads/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/logs/refs/heads/master' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/heads/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/remotes' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/remotes/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/remotes/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/remotes/origin' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/logs/refs/remotes/origin/HEAD' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/remotes/origin/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/remotes/origin/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/logs/refs/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/packed-refs' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/branches' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/branches/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/branches/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/hooks' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/pre-commit.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/update.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/pre-applypatch.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/post-update.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/hooks/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/pre-rebase.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/pre-receive.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/hooks/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/applypatch-msg.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/pre-push.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/prepare-commit-msg.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/commit-msg.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/hooks/fsmonitor-watchman.sample' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/heads' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/heads/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/refs/heads/master' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/heads/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/remotes' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/remotes/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/remotes/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/remotes/origin' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/refs/remotes/origin/HEAD' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/remotes/origin/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/remotes/origin/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/tags' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/tags/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/tags/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/refs/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/info' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/info/exclude' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/info/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.git/info/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/config' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/.git/description' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.well-known/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/wp-includes/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/wp-content/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:389]
+Permissions setting on file '/var/www/html/dev/njfec/20190524_njdec_e6f169c9b0af19ee8215_20190524030837_archive.zip' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/wp-admin/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/dup-installer/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/.quarantine/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/test/..' failed
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s1.php|LINE:394]
+Permissions setting on directory '/var/www/html/dev/njfec/cgi-bin/..' failed
+
+STEP-1 COMPLETE @ 03:22:51 - RUNTIME: 7.9936 sec.
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/classes/config/class.constants.php|LINE:81]
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/classes/config/class.constants.php|LINE:81]
+
+
+
+********************************************************************************
+* DUPLICATOR-LITE INSTALL-LOG
+* STEP-2 START @ 03:23:11
+* NOTICE: Do NOT post to public sites or forums!!
+********************************************************************************
+--------------------------------------
+DATABASE-ENVIRONMENT
+--------------------------------------
+MYSQL VERSION:	This Server: 5.7.26 -- Build Server: 5.6.41
+FILE SIZE:	dup-database__e6f169c-24030837.sql (147.74MB)
+TIMEOUT:	5000
+MAXPACK:	16777216
+SQLMODE:	ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+NEW SQL FILE:	[/var/www/html/dev/njfec/dup-installer/dup-installer-data__e6f169c-24030837.sql]
+COLLATE FB:	Off
+[PHP ERR][WARN] MSG:count(): Parameter must be an array or an object that implements Countable [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/ctrls/ctrl.s2.dbinstall.php|LINE:386]
+--------------------------------------
+DATABASE RESULTS
+--------------------------------------
+**ERROR** database error write 'Table 'wp_qyen_bdg_team_cat' already exists' - [sql=CREATE TABLE `wp_qyen_bdg_team_cat` (
+  `teamID` int(11) NOT NULL AUTO_INCR...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_bdg_team_cat` VALUES (1,1,'Exporting','Exporting');...]
+**ERROR** database error write 'Table 'wp_qyen_bdg_team_member' already exists' - [sql=CREATE TABLE `wp_qyen_bdg_team_member` (
+  `memberID` int(11) NOT NULL AUTO...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_bdg_team_member` VALUES (1,'1','Susan Widmer','Directo...]
+**ERROR** database error write 'Table 'wp_qyen_cntctfrm_field' already exists' - [sql=CREATE TABLE `wp_qyen_cntctfrm_field` (
+  `id` int(11) NOT NULL AUTO_INCREM...]
+**ERROR** database error write 'Duplicate entry '1' for key 'id'' - [sql=INSERT INTO `wp_qyen_cntctfrm_field` VALUES (1,'name'),(2,'email'),(3,'subj...]
+**ERROR** database error write 'Table 'wp_qyen_commentmeta' already exists' - [sql=CREATE TABLE `wp_qyen_commentmeta` (
+  `meta_id` bigint(20) unsigned NOT NU...]
+**ERROR** database error write 'Table 'wp_qyen_comments' already exists' - [sql=CREATE TABLE `wp_qyen_comments` (
+  `comment_ID` bigint(20) unsigned NOT NU...]
+**ERROR** database error write 'Table 'wp_qyen_duplicator_packages' already exists' - [sql=CREATE TABLE `wp_qyen_duplicator_packages` (
+  `id` bigint(20) unsigned NOT...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_duplicator_packages` VALUES (1,'20190524_njdec','e6f16...]
+**ERROR** database error write 'Table 'wp_qyen_links' already exists' - [sql=CREATE TABLE `wp_qyen_links` (
+  `link_id` bigint(20) unsigned NOT NULL AUT...]
+**ERROR** database error write 'Duplicate entry '2' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_links` VALUES (2,'http://www.google.com/alerts/feeds/0...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_custom_fields' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_custom_fields` (
+  `id` int(11) unsigned NOT...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_dynamic_segment_filters' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_dynamic_segment_filters` (
+  `id` int(11) un...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_forms' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_forms` (
+  `id` int(11) unsigned NOT NULL AU...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_forms` VALUES (1,'Subscribe to our Newsletter...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_log' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_log` (
+  `id` bigint(20) unsigned NOT NULL A...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_mapping_to_external_entities' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_mapping_to_external_entities` (
+  `old_id` i...]
+**ERROR** database error write 'Duplicate entry '2-segments' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_mapping_to_external_entities` VALUES (2,'segm...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_newsletter_links' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_newsletter_links` (
+  `id` int(11) unsigned ...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_links` VALUES (1,2,1,'[link:newsle...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_newsletter_option' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_newsletter_option` (
+  `id` int(11) unsigned...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_option` VALUES (1,1,8,'weekly','20...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_newsletter_option_fields' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_newsletter_option_fields` (
+  `id` int(11) u...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_option_fields` VALUES (1,'isSchedu...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_newsletter_posts' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_newsletter_posts` (
+  `id` int(11) unsigned ...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_posts` VALUES (1,1,30236,'2018-02-...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_newsletter_segment' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_newsletter_segment` (
+  `id` int(11) unsigne...]
+**ERROR** database error write 'Duplicate entry '7' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_segment` VALUES (7,1,5,'2018-02-07...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_newsletter_templates' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_newsletter_templates` (
+  `id` int(11) unsig...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_templates` VALUES (1,0,'Newsletter...]
+**ERROR** database error write 'Duplicate entry '28' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_templates` VALUES (28,4,'There are...]
+**ERROR** database error write 'Duplicate entry '31' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_templates` VALUES (31,0,'Featured ...]
+**ERROR** database error write 'Duplicate entry '77' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletter_templates` VALUES (77,0,'Branding ...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_newsletters' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_newsletters` (
+  `id` int(11) unsigned NOT N...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_newsletters` VALUES (1,'84a8f99a944e',NULL,'T...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_premium_newsletter_extra_data' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_premium_newsletter_extra_data` (
+  `id` int(...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_premium_newsletter_extra_data` VALUES (1,1,''...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_scheduled_task_subscribers' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_scheduled_task_subscribers` (
+  `task_id` in...]
+**ERROR** database error write 'Duplicate entry '3-1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (3,1,1,'20...]
+**ERROR** database error write 'Duplicate entry '20-2271' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (20,2271,1...]
+**ERROR** database error write 'Duplicate entry '42-1445' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (42,1445,1...]
+**ERROR** database error write 'Duplicate entry '63-1175' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (63,1175,1...]
+**ERROR** database error write 'Duplicate entry '83-1551' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (83,1551,1...]
+**ERROR** database error write 'Duplicate entry '121-2235' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (121,2235,...]
+**ERROR** database error write 'Duplicate entry '146-3039' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (146,3039,...]
+**ERROR** database error write 'Duplicate entry '170-4522' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (170,4522,...]
+**ERROR** database error write 'Duplicate entry '192-2790' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (192,2790,...]
+**ERROR** database error write 'Duplicate entry '211-338' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_task_subscribers` VALUES (211,338,1...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_scheduled_tasks' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_scheduled_tasks` (
+  `id` int(11) unsigned N...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_scheduled_tasks` VALUES (1,'premium_key_check...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_segments' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_segments` (
+  `id` int(11) unsigned NOT NULL...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_segments` VALUES (1,'WordPress Users','wp_use...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_sending_queues' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_sending_queues` (
+  `id` int(11) unsigned NO...]
+**ERROR** database error write 'Duplicate entry '2' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_sending_queues` VALUES (2,NULL,5,'{\"html\":\...]
+**ERROR** database error write 'Duplicate entry '20' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_sending_queues` VALUES (20,NULL,14,'{\"html\"...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_settings' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_settings` (
+  `id` int(11) unsigned NOT NULL...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_settings` VALUES (1,'sender','a:2:{s:4:\"name...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_statistics_clicks' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_statistics_clicks` (
+  `id` int(11) unsigned...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_statistics_clicks` VALUES (1,3,163,4,10,1,'20...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_statistics_forms' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_statistics_forms` (
+  `id` int(11) unsigned ...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_statistics_newsletters' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_statistics_newsletters` (
+  `id` int(11) uns...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_statistics_newsletters` VALUES (1,3,1,4,'2018...]
+**ERROR** database error write 'Duplicate entry '26424' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_statistics_newsletters` VALUES (26424,10,2352...]
+**ERROR** database error write 'Duplicate entry '51470' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_statistics_newsletters` VALUES (51470,27,940,...]
+**ERROR** database error write 'Duplicate entry '76511' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_statistics_newsletters` VALUES (76511,36,1526...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_statistics_opens' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_statistics_opens` (
+  `id` int(11) unsigned ...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_statistics_opens` VALUES (1,3,32,4,'2018-02-0...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_statistics_unsubscribes' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_statistics_unsubscribes` (
+  `id` int(11) un...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_statistics_unsubscribes` VALUES (1,3,181,4,'2...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_statistics_woocommerce_purchases' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_statistics_woocommerce_purchases` (
+  `id` i...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_stats_notifications' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_stats_notifications` (
+  `id` int(11) unsign...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_subscriber_custom_field' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_subscriber_custom_field` (
+  `id` int(11) un...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_subscriber_ips' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_subscriber_ips` (
+  `ip` varchar(45) COLLATE...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_subscriber_segment' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_subscriber_segment` (
+  `id` int(11) unsigne...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_subscriber_segment` VALUES (1,1,1,'subscribed...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_subscribers' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_subscribers` (
+  `id` int(11) unsigned NOT N...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_mailpoet_subscribers` VALUES (1,2,'joe','','joe@cadrol...]
+**ERROR** database error write 'Table 'wp_qyen_mailpoet_user_flags' already exists' - [sql=CREATE TABLE `wp_qyen_mailpoet_user_flags` (
+  `id` int(11) unsigned NOT NU...]
+**ERROR** database error write 'Table 'wp_qyen_options' already exists' - [sql=CREATE TABLE `wp_qyen_options` (
+  `option_id` bigint(20) unsigned NOT NULL...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_options` VALUES (1,'siteurl','http://www.njdec.org','y...]
+**ERROR** database error write 'Duplicate entry '972227' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_options` VALUES (972227,'_transient_feed_d117b5738fbd3...]
+**ERROR** database error write 'Table 'wp_qyen_postmeta' already exists' - [sql=CREATE TABLE `wp_qyen_postmeta` (
+  `meta_id` bigint(20) unsigned NOT NULL ...]
+**ERROR** database error write 'Duplicate entry '10' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (10,7,'_edit_last','10'),(11,7,'_edit...]
+**ERROR** database error write 'Duplicate entry '11102' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (11102,2573,'syndication_feed','http:...]
+**ERROR** database error write 'Duplicate entry '21788' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (21788,5345,'syndication_feed_id','5'...]
+**ERROR** database error write 'Duplicate entry '31963' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (31963,8052,'syndication_feed','http:...]
+**ERROR** database error write 'Duplicate entry '42363' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (42363,10777,'syndication_permalink',...]
+**ERROR** database error write 'Duplicate entry '53558' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (53558,13523,'syndication_feed_id','1...]
+**ERROR** database error write 'Duplicate entry '64151' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (64151,16205,'syndication_source_id',...]
+**ERROR** database error write 'Duplicate entry '74970' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (74970,18924,'syndication_feed','http...]
+**ERROR** database error write 'Duplicate entry '85568' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (85568,21610,'syndication_permalink',...]
+**ERROR** database error write 'Duplicate entry '95627' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (95627,24275,'syndication_permalink',...]
+**ERROR** database error write 'Duplicate entry '105162' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (105162,26962,'syndication_feed','htt...]
+**ERROR** database error write 'Duplicate entry '114619' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (114619,29600,'syndication_permalink'...]
+**ERROR** database error write 'Duplicate entry '124594' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (124594,32136,'syndication_item_hash'...]
+**ERROR** database error write 'Duplicate entry '134145' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (134145,34732,'enclosure','\n\n'),(13...]
+**ERROR** database error write 'Duplicate entry '137092' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (137092,35499,'wpupg_temp_cache','a:5...]
+**ERROR** database error write 'Duplicate entry '137529' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (137529,35523,'syndication_permalink'...]
+**ERROR** database error write 'Duplicate entry '147087' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (147087,38099,'syndication_feed','htt...]
+**ERROR** database error write 'Duplicate entry '156820' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (156820,40743,'syndication_permalink'...]
+**ERROR** database error write 'Duplicate entry '166409' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_postmeta` VALUES (166409,43324,'syndication_item_hash'...]
+**ERROR** database error write 'Table 'wp_qyen_posts' already exists' - [sql=CREATE TABLE `wp_qyen_posts` (
+  `ID` bigint(20) unsigned NOT NULL AUTO_INC...]
+**ERROR** database error write 'Duplicate entry '7' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (7,10,'2013-11-24 02:29:39','2013-11-24 ...]
+**ERROR** database error write 'Duplicate entry '1537' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (1537,7,'2014-10-28 05:03:45','2014-10-2...]
+**ERROR** database error write 'Duplicate entry '3115' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (3115,7,'2015-01-13 12:52:10','2015-01-1...]
+**ERROR** database error write 'Duplicate entry '4697' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (4697,6,'2015-03-30 13:07:30','2015-03-3...]
+**ERROR** database error write 'Duplicate entry '6275' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (6275,6,'2015-06-18 00:12:01','2015-06-1...]
+**ERROR** database error write 'Duplicate entry '7785' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (7785,6,'2015-09-09 10:12:35','2015-09-0...]
+**ERROR** database error write 'Duplicate entry '9386' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (9386,6,'2015-11-28 13:12:59','2015-11-2...]
+**ERROR** database error write 'Duplicate entry '11029' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (11029,7,'2016-02-24 08:26:15','2016-02-...]
+**ERROR** database error write 'Duplicate entry '12615' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (12615,9,'2016-05-06 16:46:43','2016-05-...]
+**ERROR** database error write 'Duplicate entry '14214' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (14214,6,'2016-07-19 11:40:46','2016-07-...]
+**ERROR** database error write 'Duplicate entry '15833' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (15833,7,'2016-10-06 00:56:15','2016-10-...]
+**ERROR** database error write 'Duplicate entry '17382' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (17382,7,'2016-12-19 17:40:10','2016-12-...]
+**ERROR** database error write 'Duplicate entry '18972' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (18972,7,'2017-03-03 03:33:45','2017-03-...]
+**ERROR** database error write 'Duplicate entry '20611' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (20611,7,'2017-05-22 10:41:15','2017-05-...]
+**ERROR** database error write 'Duplicate entry '22241' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (22241,7,'2017-07-12 15:24:56','2017-07-...]
+**ERROR** database error write 'Duplicate entry '24045' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (24045,6,'2017-08-24 05:55:35','2017-08-...]
+**ERROR** database error write 'Duplicate entry '25630' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (25630,7,'2017-10-05 08:26:15','2017-10-...]
+**ERROR** database error write 'Duplicate entry '27218' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (27218,7,'2017-11-10 21:22:30','2017-11-...]
+**ERROR** database error write 'Duplicate entry '28447' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (28447,6,'2017-12-13 10:45:22','2017-12-...]
+**ERROR** database error write 'Duplicate entry '29565' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (29565,7,'2018-01-23 10:01:46','2018-01-...]
+**ERROR** database error write 'Duplicate entry '30700' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (30700,6,'2018-02-21 04:56:15','2018-02-...]
+**ERROR** database error write 'Duplicate entry '31832' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (31832,6,'2018-03-18 12:53:00','2018-03-...]
+**ERROR** database error write 'Duplicate entry '32923' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (32923,7,'2018-04-16 23:30:00','2018-04-...]
+**ERROR** database error write 'Duplicate entry '34116' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (34116,6,'2018-05-14 12:31:46','2018-05-...]
+**ERROR** database error write 'Duplicate entry '35677' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (35677,7,'2018-06-28 12:47:09','2018-06-...]
+**ERROR** database error write 'Duplicate entry '37277' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (37277,7,'2018-08-26 19:36:06','2018-08-...]
+**ERROR** database error write 'Duplicate entry '38852' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (38852,7,'2018-10-15 06:30:00','2018-10-...]
+**ERROR** database error write 'Duplicate entry '40448' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (40448,7,'2018-12-11 18:00:22','2018-12-...]
+**ERROR** database error write 'Duplicate entry '42098' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (42098,7,'2019-02-26 02:15:02','2019-02-...]
+**ERROR** database error write 'Duplicate entry '43847' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_posts` VALUES (43847,7,'2019-04-17 02:56:15','2019-04-...]
+**ERROR** database error write 'Table 'wp_qyen_rg_form' already exists' - [sql=CREATE TABLE `wp_qyen_rg_form` (
+  `id` mediumint(8) unsigned NOT NULL AUTO...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_rg_form` VALUES (1,'Events Submission Form','2016-01-1...]
+**ERROR** database error write 'Table 'wp_qyen_rg_form_meta' already exists' - [sql=CREATE TABLE `wp_qyen_rg_form_meta` (
+  `form_id` mediumint(8) unsigned NOT...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_rg_form_meta` VALUES (1,'{\"title\":\"Events Submissio...]
+**ERROR** database error write 'Table 'wp_qyen_rg_form_view' already exists' - [sql=CREATE TABLE `wp_qyen_rg_form_view` (
+  `id` bigint(20) unsigned NOT NULL A...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_rg_form_view` VALUES (1,1,'2016-01-12 05:33:08','24.15...]
+**ERROR** database error write 'Table 'wp_qyen_rg_incomplete_submissions' already exists' - [sql=CREATE TABLE `wp_qyen_rg_incomplete_submissions` (
+  `uuid` char(32) COLLAT...]
+**ERROR** database error write 'Table 'wp_qyen_rg_lead' already exists' - [sql=CREATE TABLE `wp_qyen_rg_lead` (
+  `id` int(10) unsigned NOT NULL AUTO_INCR...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_rg_lead` VALUES (1,1,NULL,'2016-01-12 18:07:11',0,0,'2...]
+**ERROR** database error write 'Table 'wp_qyen_rg_lead_detail' already exists' - [sql=CREATE TABLE `wp_qyen_rg_lead_detail` (
+  `id` bigint(20) unsigned NOT NULL...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_rg_lead_detail` VALUES (1,1,1,1,'2016-01-19'),(2,1,1,2...]
+**ERROR** database error write 'Table 'wp_qyen_rg_lead_detail_long' already exists' - [sql=CREATE TABLE `wp_qyen_rg_lead_detail_long` (
+  `lead_detail_id` bigint(20) ...]
+**ERROR** database error write 'Table 'wp_qyen_rg_lead_notes' already exists' - [sql=CREATE TABLE `wp_qyen_rg_lead_notes` (
+  `id` int(10) unsigned NOT NULL AUT...]
+**ERROR** database error write 'Table 'wp_qyen_slp_rep_query' already exists' - [sql=CREATE TABLE `wp_qyen_slp_rep_query` (
+  `slp_repq_id` bigint(20) unsigned ...]
+**ERROR** database error write 'Table 'wp_qyen_slp_rep_query_results' already exists' - [sql=CREATE TABLE `wp_qyen_slp_rep_query_results` (
+  `slp_repqr_id` bigint(20) ...]
+**ERROR** database error write 'Table 'wp_qyen_store_locator' already exists' - [sql=CREATE TABLE `wp_qyen_store_locator` (
+  `sl_id` mediumint(8) unsigned NOT ...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_store_locator` VALUES (1,'NJ District Export Council -...]
+**ERROR** database error write 'Table 'wp_qyen_term_relationships' already exists' - [sql=CREATE TABLE `wp_qyen_term_relationships` (
+  `object_id` bigint(20) unsign...]
+**ERROR** database error write 'Duplicate entry '18-2' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_term_relationships` VALUES (18,2,0),(17,2,0),(25,2,0),...]
+**ERROR** database error write 'Table 'wp_qyen_term_taxonomy' already exists' - [sql=CREATE TABLE `wp_qyen_term_taxonomy` (
+  `term_taxonomy_id` bigint(20) unsi...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_term_taxonomy` VALUES (1,1,'category','',0,0),(2,2,'na...]
+**ERROR** database error write 'Table 'wp_qyen_termmeta' already exists' - [sql=CREATE TABLE `wp_qyen_termmeta` (
+  `meta_id` bigint(20) unsigned NOT NULL ...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_termmeta` VALUES (1,56,'_rt_order','0'),(2,4,'_rt_orde...]
+**ERROR** database error write 'Table 'wp_qyen_terms' already exists' - [sql=CREATE TABLE `wp_qyen_terms` (
+  `term_id` bigint(20) unsigned NOT NULL AUT...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_terms` VALUES (1,'Uncategorized','uncategorized',0),(2...]
+**ERROR** database error write 'Table 'wp_qyen_usermeta' already exists' - [sql=CREATE TABLE `wp_qyen_usermeta` (
+  `umeta_id` bigint(20) unsigned NOT NULL...]
+**ERROR** database error write 'Duplicate entry '26' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_usermeta` VALUES (26,2,'first_name',''),(27,2,'last_na...]
+**ERROR** database error write 'Table 'wp_qyen_users' already exists' - [sql=CREATE TABLE `wp_qyen_users` (
+  `ID` bigint(20) unsigned NOT NULL AUTO_INC...]
+**ERROR** database error write 'Duplicate entry '2' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_users` VALUES (2,'joe','$P$BtirgDd4g9YI1LDcMgyjv1DKpU1...]
+**ERROR** database error write 'Table 'wp_qyen_wpfm_backup' already exists' - [sql=CREATE TABLE `wp_qyen_wpfm_backup` (
+  `id` int(11) NOT NULL AUTO_INCREMENT...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_campaign' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_campaign` (
+  `campaign_id` int(10) unsigned N...]
+**ERROR** database error write 'Duplicate entry '4' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_campaign` VALUES (4,'There\'s a new event from ...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_campaign_list' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_campaign_list` (
+  `list_id` int(10) unsigned ...]
+**ERROR** database error write 'Duplicate entry '3-2' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_campaign_list` VALUES (3,2,NULL),(3,3,NULL),(3,...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_custom_field' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_custom_field` (
+  `id` mediumint(9) NOT NULL A...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_email' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_email` (
+  `email_id` int(10) unsigned NOT NUL...]
+**ERROR** database error write 'Duplicate entry '2' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_email` VALUES (2,0,'Confirm your subscription t...]
+**ERROR** database error write 'Duplicate entry '43' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_email` VALUES (43,5,'There\'s a new event from ...]
+**ERROR** database error write 'Duplicate entry '78' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_email` VALUES (78,5,'There\'s a new event from ...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_email_user_stat' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_email_user_stat` (
+  `user_id` int(10) unsigne...]
+**ERROR** database error write 'Duplicate entry '8-6' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_email_user_stat` VALUES (8,6,1407148908,1407149...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_email_user_url' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_email_user_url` (
+  `email_id` int(10) unsigne...]
+**ERROR** database error write 'Duplicate entry '8-5-1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_email_user_url` VALUES (5,8,1,1405343399,1),(6,...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_form' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_form` (
+  `form_id` int(10) unsigned NOT NULL ...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_form` VALUES (1,'Subscribe to our Newsletter','...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_list' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_list` (
+  `list_id` int(10) unsigned NOT NULL ...]
+**ERROR** database error write 'Duplicate entry '2' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_list` VALUES (2,'WordPress Users','users','The ...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_queue' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_queue` (
+  `user_id` int(10) unsigned NOT NULL...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_subscriber_ips' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_subscriber_ips` (
+  `ip` varchar(45) NOT NULL,...]
+**ERROR** database error write 'Duplicate entry '2018-11-25 20:38:04-185.65.135.184' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_subscriber_ips` VALUES ('185.65.135.184','2018-...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_url' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_url` (
+  `url_id` int(10) unsigned NOT NULL AU...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_url` VALUES (1,NULL,'http://www.njdec.org/event...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_url_mail' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_url_mail` (
+  `email_id` int(11) NOT NULL AUTO...]
+**ERROR** database error write 'Duplicate entry '5-1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_url_mail` VALUES (5,1,0,1),(6,2,0,1),(6,1,0,1),...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_user' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_user` (
+  `user_id` int(10) unsigned NOT NULL ...]
+**ERROR** database error write 'Duplicate entry '2' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_user` VALUES (2,2,'joe@cadrol.com','','','','0'...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_user_field' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_user_field` (
+  `field_id` int(10) unsigned NO...]
+**ERROR** database error write 'Duplicate entry '1' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_user_field` VALUES (1,'First name','firstname',...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_user_history' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_user_history` (
+  `history_id` int(10) unsigne...]
+**ERROR** database error write 'Table 'wp_qyen_wysija_user_list' already exists' - [sql=CREATE TABLE `wp_qyen_wysija_user_list` (
+  `list_id` int(10) unsigned NOT ...]
+**ERROR** database error write 'Duplicate entry '3-8' for key 'PRIMARY'' - [sql=INSERT INTO `wp_qyen_wysija_user_list` VALUES (3,8,0,1476702254),(2,2,14052...]
+DB VIEWS:	enabled
+DB PROCEDURES:	enabled
+ERRORS FOUND:	194
+DROPPED TABLES:	0
+RENAMED TABLES:	0
+QUERIES RAN:	1252
+
+wp_qyen_bdg_team_cat: (1)
+wp_qyen_bdg_team_member: (1)
+wp_qyen_cntctfrm_field: (13)
+wp_qyen_commentmeta: (0)
+wp_qyen_comments: (0)
+wp_qyen_duplicator_packages: (0)
+wp_qyen_links: (28)
+wp_qyen_mailpoet_custom_fields: (0)
+wp_qyen_mailpoet_dynamic_segment_filters: (0)
+wp_qyen_mailpoet_forms: (3)
+wp_qyen_mailpoet_log: (0)
+wp_qyen_mailpoet_mapping_to_external_entities: (4785)
+wp_qyen_mailpoet_newsletter_links: (349)
+wp_qyen_mailpoet_newsletter_option: (50)
+wp_qyen_mailpoet_newsletter_option_fields: (20)
+wp_qyen_mailpoet_newsletter_posts: (78)
+wp_qyen_mailpoet_newsletter_segment: (31)
+wp_qyen_mailpoet_newsletter_templates: (89)
+wp_qyen_mailpoet_newsletters: (32)
+wp_qyen_mailpoet_premium_newsletter_extra_data: (8)
+wp_qyen_mailpoet_scheduled_task_subscribers: (235817)
+wp_qyen_mailpoet_scheduled_tasks: (216)
+wp_qyen_mailpoet_segments: (7)
+wp_qyen_mailpoet_sending_queues: (31)
+wp_qyen_mailpoet_settings: (33)
+wp_qyen_mailpoet_statistics_clicks: (4123)
+wp_qyen_mailpoet_statistics_forms: (0)
+wp_qyen_mailpoet_statistics_newsletters: (89768)
+wp_qyen_mailpoet_statistics_opens: (14208)
+wp_qyen_mailpoet_statistics_unsubscribes: (271)
+wp_qyen_mailpoet_statistics_woocommerce_purchases: (0)
+wp_qyen_mailpoet_stats_notifications: (0)
+wp_qyen_mailpoet_subscriber_custom_field: (0)
+wp_qyen_mailpoet_subscriber_ips: (0)
+wp_qyen_mailpoet_subscriber_segment: (10671)
+wp_qyen_mailpoet_subscribers: (4798)
+wp_qyen_mailpoet_user_flags: (0)
+wp_qyen_options: (449)
+wp_qyen_postmeta: (165797)
+wp_qyen_posts: (44314)
+wp_qyen_rg_form: (1)
+wp_qyen_rg_form_meta: (1)
+wp_qyen_rg_form_view: (18)
+wp_qyen_rg_incomplete_submissions: (0)
+wp_qyen_rg_lead: (1)
+wp_qyen_rg_lead_detail: (8)
+wp_qyen_rg_lead_detail_long: (0)
+wp_qyen_rg_lead_notes: (0)
+wp_qyen_slp_rep_query: (0)
+wp_qyen_slp_rep_query_results: (0)
+wp_qyen_store_locator: (1)
+wp_qyen_term_relationships: (43431)
+wp_qyen_term_taxonomy: (51)
+wp_qyen_termmeta: (23)
+wp_qyen_terms: (51)
+wp_qyen_usermeta: (144)
+wp_qyen_users: (7)
+wp_qyen_wpfm_backup: (0)
+wp_qyen_wysija_campaign: (4)
+wp_qyen_wysija_campaign_list: (4)
+wp_qyen_wysija_custom_field: (0)
+wp_qyen_wysija_email: (106)
+wp_qyen_wysija_email_user_stat: (19990)
+wp_qyen_wysija_email_user_url: (1122)
+wp_qyen_wysija_form: (1)
+wp_qyen_wysija_list: (5)
+wp_qyen_wysija_queue: (0)
+wp_qyen_wysija_subscriber_ips: (7)
+wp_qyen_wysija_url: (194)
+wp_qyen_wysija_url_mail: (288)
+wp_qyen_wysija_user: (4948)
+wp_qyen_wysija_user_field: (2)
+wp_qyen_wysija_user_history: (0)
+wp_qyen_wysija_user_list: (5524)
+Removed '171' cache/transient rows
+
+INSERT DATA RUNTIME: 16.8631 sec.
+STEP-2 COMPLETE @ 03:23:28 - RUNTIME: 16.8681 sec.
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/classes/config/class.constants.php|LINE:81]
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/classes/config/class.constants.php|LINE:81]
+
+
+
+********************************************************************************
+DUPLICATOR-LITE INSTALL-LOG
+STEP-3 START @ 03:35:56
+NOTICE: Do NOT post to public sites or forums
+********************************************************************************
+CHARSET SERVER:	latin1
+CHARSET CLIENT:	utf8
+
+--------------------------------------
+SERIALIZER ENGINE
+[*] scan every column
+[~] scan only text columns
+[^] no searchable columns
+--------------------------------------
+wp_qyen_bdg_team_cat~ (1)
+wp_qyen_bdg_team_member~ (1)
+wp_qyen_cntctfrm_field~ (13)
+wp_qyen_commentmeta^ (0)
+wp_qyen_comments^ (0)
+wp_qyen_duplicator_packages^ (0)
+wp_qyen_links~ (28)
+wp_qyen_mailpoet_custom_fields^ (0)
+wp_qyen_mailpoet_dynamic_segment_filters^ (0)
+wp_qyen_mailpoet_forms~ (3)
+wp_qyen_mailpoet_log^ (0)
+wp_qyen_mailpoet_mapping_to_external_entities~ (4785)
+wp_qyen_mailpoet_newsletter_links~ (349)
+wp_qyen_mailpoet_newsletter_option~ (50)
+wp_qyen_mailpoet_newsletter_option_fields~ (20)
+wp_qyen_mailpoet_newsletter_posts~ (78)
+wp_qyen_mailpoet_newsletter_segment~ (31)
+wp_qyen_mailpoet_newsletter_templates~ (89)
+wp_qyen_mailpoet_newsletters~ (32)
+wp_qyen_mailpoet_premium_newsletter_extra_data~ (8)
+wp_qyen_mailpoet_scheduled_task_subscribers~ (235817)
+wp_qyen_mailpoet_scheduled_tasks~ (216)
+wp_qyen_mailpoet_segments~ (7)
+wp_qyen_mailpoet_sending_queues~ (31)
+wp_qyen_mailpoet_settings~ (33)
+wp_qyen_mailpoet_statistics_clicks~ (4123)
+wp_qyen_mailpoet_statistics_forms^ (0)
+wp_qyen_mailpoet_statistics_newsletters~ (89768)
+wp_qyen_mailpoet_statistics_opens~ (14208)
+wp_qyen_mailpoet_statistics_unsubscribes~ (271)
+wp_qyen_mailpoet_statistics_woocommerce_purchases^ (0)
+wp_qyen_mailpoet_stats_notifications^ (0)
+wp_qyen_mailpoet_subscriber_custom_field^ (0)
+wp_qyen_mailpoet_subscriber_ips^ (0)
+wp_qyen_mailpoet_subscriber_segment~ (10671)
+wp_qyen_mailpoet_subscribers~ (4798)
+wp_qyen_mailpoet_user_flags^ (0)
+wp_qyen_options~ (449)
+wp_qyen_postmeta~ (165797)
+wp_qyen_posts~ (44314)
+wp_qyen_rg_form~ (1)
+wp_qyen_rg_form_meta~ (1)
+wp_qyen_rg_form_view~ (18)
+wp_qyen_rg_incomplete_submissions^ (0)
+wp_qyen_rg_lead~ (1)
+wp_qyen_rg_lead_detail~ (8)
+wp_qyen_rg_lead_detail_long^ (0)
+wp_qyen_rg_lead_notes^ (0)
+wp_qyen_slp_rep_query^ (0)
+wp_qyen_slp_rep_query_results^ (0)
+wp_qyen_store_locator~ (1)
+wp_qyen_term_relationships~ (43431)
+wp_qyen_term_taxonomy~ (51)
+wp_qyen_termmeta~ (23)
+wp_qyen_terms~ (51)
+wp_qyen_usermeta~ (144)
+wp_qyen_users~ (7)
+wp_qyen_wpfm_backup^ (0)
+wp_qyen_wysija_campaign~ (4)
+wp_qyen_wysija_campaign_list~ (4)
+wp_qyen_wysija_custom_field^ (0)
+wp_qyen_wysija_email~ (106)
+wp_qyen_wysija_email_user_stat~ (19990)
+wp_qyen_wysija_email_user_url~ (1122)
+wp_qyen_wysija_form~ (1)
+wp_qyen_wysija_list~ (5)
+wp_qyen_wysija_queue^ (0)
+wp_qyen_wysija_subscriber_ips~ (7)
+wp_qyen_wysija_url~ (194)
+wp_qyen_wysija_url_mail~ (288)
+wp_qyen_wysija_user~ (4948)
+wp_qyen_wysija_user_field~ (2)
+wp_qyen_wysija_user_history^ (0)
+wp_qyen_wysija_user_list~ (5524)
+--------------------------------------
+Search1:	'/home3/njdecorg/public_html' 
+Change1:	'/var/www/html/dev/njfec' 
+Search2:	'\/home3\/njdecorg\/public_html' 
+Change2:	'\/var\/www\/html\/dev\/njfec' 
+Search3:	'%2Fhome3%2Fnjdecorg%2Fpublic_html%2F' 
+Change3:	'%2Fvar%2Fwww%2Fhtml%2Fdev%2Fnjfec%2F' 
+Search4:	'\home3\njdecorg\public_html' 
+Change4:	'/var/www/html/dev/njfec' 
+Search5:	'\\home3\\njdecorg\\public_html' 
+Change5:	'\/var\/www\/html\/dev\/njfec' 
+Search6:	'%5Chome3%5Cnjdecorg%5Cpublic_html' 
+Change6:	'%2Fvar%2Fwww%2Fhtml%2Fdev%2Fnjfec' 
+Search7:	'//www.njdec.org' 
+Change7:	'//localhost/dev/njfec' 
+Search8:	'\/\/www.njdec.org' 
+Change8:	'\/\/localhost\/dev\/njfec' 
+Search9:	'%2F%2Fwww.njdec.org' 
+Change9:	'%2F%2Flocalhost%2Fdev%2Fnjfec' 
+Search10:	'https://localhost' 
+Change10:	'http://localhost' 
+Search11:	'https:\/\/localhost' 
+Change11:	'http:\/\/localhost' 
+Search12:	'https%3A%2F%2Flocalhost' 
+Change12:	'http%3A%2F%2Flocalhost' 
+SCANNED:	Tables:74 	|	 Rows:651943 	|	 Cells:4154291 
+UPDATED:	Tables:8 	|	 Rows:23508 	|	 Cells:23777 
+ERRORS:		0 
+RUNTIME:	5.875000 sec
+
+====================================
+CONFIGURATION FILE UPDATES:
+====================================
+
+UPDATED WP-CONFIG ARK FILE:
+ - '/var/www/html/dev/njfec/wp-config.php'
+- PASS: Successfully created a new .htaccess file.
+- PASS: Existing Apache 'htaccess.orig' was removed
+
+====================================
+NOTICES
+====================================
+
+No General Notices Found
+
+FINAL REPORT NOTICES
+
+STEP-3 COMPLETE @ 03:36:02 - RUNTIME: 5.9770 sec. 
+
+
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/classes/config/class.constants.php|LINE:81]
+[PHP ERR][WARN] MSG:chmod(): Operation not permitted [CODE:2|FILE:/var/www/html/dev/njfec/dup-installer/classes/config/class.constants.php|LINE:81]

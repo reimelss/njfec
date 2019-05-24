@@ -1,0 +1,68 @@
+/*
+Theme Name:     Designfolio Child Theme
+Theme URI:      http://www.presscoders.com/designfolio
+Description:    A child theme of Designfolio (free).
+Author:         PressCoders.com
+Author URI:     http://www.presscoders.com
+Template:       designfolio
+*/
+
+@import url("../designfolio/style.css");
+
+/* Add your custom css below this line */
+
+#site-description {
+    color: #BDAE86;
+}
+#site-title, #site-description {
+    display: block;
+    float: none;
+    max-width: none;
+    text-align: center;
+}
+#site-description {
+    clear: left;
+    display: inline;
+    float: left;
+    font-size: 16px;
+    font-weight: 200;
+    margin-bottom: 17px;
+}
+#site-description img{
+width:300px;
+}
+.widget-area #text-2{
+    background: none repeat scroll 0 0 rgba(0, 0, 0, 0);
+    border: medium none;
+    float: right !important;
+    margin: 20px 0 !important;
+    padding: 20px 0 0 ;
+    width: 100%  !important;
+}
+.textwidget{
+	float:right;
+}
+.eemail_textbox_button{
+	border-radius:1em;
+	color:#FFF;
+}
+.eemail_textbox_button,.defaultbtn, .btn, #searchsubmit, #submit, .submit, .post-edit-link, .more-link, input[type="submit"], ul#filters li a {
+    background: none repeat scroll 0 0 #F13249 !important;
+}
+.eemail_textbox_button:hover,.defaultbtn:hover, .btn:hover, #searchsubmit:hover, #submit:hover, .submit:hover, .post-edit-link:hover, .more-link:hover, input[type="submit"]:hover, ul#filters li a:hover{
+	 background: none repeat scroll 0 0 #D27315 !important;
+}
+.wpcf7-form input[type="text"],.wpcf7-form textare, .wpcf7-form input[type="email"],.search  input[type="text"], .widget_search input[type="text"]{
+border: 1px solid #a9a9a9;
+}
+.eemail_textbox input[type="text"]{
+background:#fff url(images/email.jpg)no-repeat left;
+padding-left: 25px;
+background-size: 15px 12px;
+width: 80%;
+background-position:5px 8px;
+-moz-border-radius: 1em;
+-webkit-border-radius: 1em;
+border-radius: 1em;
+border: 1px solid #a9a9a9;
+}

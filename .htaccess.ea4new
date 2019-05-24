@@ -1,0 +1,15 @@
+# Use PHP56 Single php.ini as default
+AddHandler application/x-httpd-ea-php56 .php
+
+# BEGIN WordPress
+AddHandler application/x-httpd-ea-php70 .php
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+
+# END WordPress
