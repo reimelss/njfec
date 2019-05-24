@@ -7,4 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'MailPoet\\Premium\\' => array($baseDir . '/lib'),
+    'MailPoetGenerated\\' => array($baseDir . '/generated'),
 );

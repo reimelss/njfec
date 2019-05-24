@@ -4,8 +4,6 @@ namespace MailPoet\Newsletter\Editor;
 use MailPoet\WooCommerce\Helper as WooCommerceHelper;
 use MailPoet\WP\Functions as WPFunctions;
 
-if (!defined('ABSPATH')) exit;
-
 class PostContentManager {
   const WP_POST_CLASS = 'mailpoet_wp_post';
 
@@ -47,23 +45,23 @@ class PostContentManager {
 
     // convert currency signs
     $content = str_replace(
-      array('$', '€', '£', '¥'),
-      array('&#36;', '&euro;', '&pound;', '&#165;'),
+      ['$', '€', '£', '¥'],
+      ['&#36;', '&euro;', '&pound;', '&#165;'],
       $content
     );
 
     // strip useless tags
-    $tags_not_being_stripped = array(
+    $tags_not_being_stripped = [
       '<p>', '<em>', '<span>', '<b>', '<strong>', '<i>',
-      '<a>', '<ul>', '<ol>', '<li>', '<br>', '<blockquote>'
-    );
+      '<a>', '<ul>', '<ol>', '<li>', '<br>', '<blockquote>',
+    ];
     if ($display_type === 'full') {
-      $tags_not_being_stripped =  array_merge($tags_not_being_stripped, array('<figure>', '<img>', '<h1>', '<h2>', '<h3>'));
+      $tags_not_being_stripped = array_merge($tags_not_being_stripped, ['<figure>', '<img>', '<h1>', '<h2>', '<h3>']);
     }
 
     $content = strip_tags($content, implode('', $tags_not_being_stripped));
     if ($with_post_class) {
-      $content = str_replace('<p', '<p class="' . self::WP_POST_CLASS .'"', WPFunctions::get()->wpautop($content));
+      $content = str_replace('<p', '<p class="' . self::WP_POST_CLASS . '"', WPFunctions::get()->wpautop($content));
     } else {
       $content = WPFunctions::get()->wpautop($content);
     }
@@ -109,7 +107,7 @@ class PostContentManager {
     // remove embedded video and replace with links
     $content = preg_replace(
       '#<iframe.*?src=\"(.+?)\".*><\/iframe>#',
-      '<a href="$1">'.__('Click here to view media.', 'mailpoet').'</a>',
+      '<a href="$1">' . __('Click here to view media.', 'mailpoet') . '</a>',
       $content
     );
 

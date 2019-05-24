@@ -15,13 +15,13 @@ class SingleSegmentLoader {
   }
 
   /**
-   * @param int $segment_id
+   * @param string|int $segment_id
    * @return DynamicSegment
    */
   function load($segment_id) {
 
     $segment = DynamicSegment::findOne($segment_id);
-    if($segment === false) {
+    if (!$segment instanceof DynamicSegment) {
       throw new \InvalidArgumentException('Segment not found');
     }
 

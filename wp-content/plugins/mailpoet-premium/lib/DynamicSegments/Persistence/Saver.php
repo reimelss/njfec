@@ -40,9 +40,9 @@ class Saver {
    */
   private function checkErrors(\PDO $db, Model $model) {
     $errors = $model->getErrors();
-    if($errors) {
+    if ($errors) {
       $code = null;
-      if(array_key_exists(Model::DUPLICATE_RECORD, $errors)) {
+      if (array_key_exists(Model::DUPLICATE_RECORD, $errors)) {
         $code = Model::DUPLICATE_RECORD;
       }
       $db->rollBack();
@@ -55,14 +55,14 @@ class Saver {
    */
   private function saveFilters(\PDO $db, DynamicSegment $segment, $saved_data_id) {
     $this->deleteFilters($segment);
-    foreach($segment->getFilters() as $filter) {
+    foreach ($segment->getFilters() as $filter) {
       $data_filter = $this->saveFilter($filter, $saved_data_id);
       $this->checkErrors($db, $data_filter);
     }
   }
 
   private function deleteFilters(DynamicSegment $segment) {
-    DynamicSegmentFilter::deleteAllBySegmentIds(array($segment->id));
+    DynamicSegmentFilter::deleteAllBySegmentIds([$segment->id]);
   }
 
   private function saveFilter(Filter $filter, $data_segment_id) {

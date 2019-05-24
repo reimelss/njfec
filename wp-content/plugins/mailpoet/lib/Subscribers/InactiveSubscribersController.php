@@ -3,9 +3,11 @@
 namespace MailPoet\Subscribers;
 
 use Carbon\Carbon;
+use MailPoet\Config\MP2Migrator;
 use MailPoet\Models\ScheduledTask;
 use MailPoet\Models\ScheduledTaskSubscriber;
 use MailPoet\Models\SendingQueue;
+use MailPoet\Models\Setting;
 use MailPoet\Models\StatisticsOpens;
 use MailPoet\Models\Subscriber;
 
@@ -79,6 +81,13 @@ class InactiveSubscribersController {
       $threshold_date_iso, $threshold_date_iso, $day_ago_iso
     );
 
+    // If MP2 migration occurred during detection interval we can't deactivate subscribers
+    // because they are imported with original subscription date but they were not present in a list for whole period
+    $mp2_migration_date = $this->getMP2MigrationDate();
+    if ($mp2_migration_date && $mp2_migration_date > $threshold_date) {
+      return 0;
+    }
+
     // Select subscribers who received a recent tracked email but didn't open it
     $ids_to_deactivate = \ORM::forTable($subscribers_table)->rawQuery("
       SELECT s.id FROM $subscribers_table as s
@@ -116,14 +125,24 @@ class InactiveSubscribersController {
     $subscribers_table = Subscriber::$_table;
     $stats_opens_table = StatisticsOpens::$_table;
 
-    $ids_to_activate = \ORM::forTable($subscribers_table)->select("$subscribers_table.id")
-      ->leftOuterJoin($stats_opens_table, "$subscribers_table.id = $stats_opens_table.subscriber_id AND $stats_opens_table.created_at > '$threshold_date'")
-      ->whereLt("$subscribers_table.created_at", $threshold_date)
-      ->where("$subscribers_table.status", Subscriber::STATUS_INACTIVE)
-      ->whereRaw("$stats_opens_table.id IS NOT NULL")
-      ->limit($batch_size)
-      ->groupByExpr("$subscribers_table.id")
-      ->findArray();
+    $mp2_migration_date = $this->getMP2MigrationDate();
+    if ($mp2_migration_date && $mp2_migration_date > $threshold_date) {
+      // If MP2 migration occurred during detection interval re-activate all subscribers created before migration
+      $ids_to_activate = \ORM::forTable($subscribers_table)->select("$subscribers_table.id")
+        ->whereLt("$subscribers_table.created_at", $mp2_migration_date)
+        ->where("$subscribers_table.status", Subscriber::STATUS_INACTIVE)
+        ->limit($batch_size)
+        ->findArray();
+    } else {
+      $ids_to_activate = \ORM::forTable($subscribers_table)->select("$subscribers_table.id")
+        ->leftOuterJoin($stats_opens_table, "$subscribers_table.id = $stats_opens_table.subscriber_id AND $stats_opens_table.created_at > '$threshold_date'")
+        ->whereLt("$subscribers_table.created_at", $threshold_date)
+        ->where("$subscribers_table.status", Subscriber::STATUS_INACTIVE)
+        ->whereRaw("$stats_opens_table.id IS NOT NULL")
+        ->limit($batch_size)
+        ->groupByExpr("$subscribers_table.id")
+        ->findArray();
+    }
 
     $ids_to_activate = array_map(
       function($id) {
@@ -139,5 +158,13 @@ class InactiveSubscribersController {
       implode(',', $ids_to_activate)
     ));
     return count($ids_to_activate);
+  }
+
+  private function getMP2MigrationDate() {
+    $migration_complete = Setting::where('name', MP2Migrator::MIGRATION_COMPLETE_SETTING_KEY)->findOne();
+    if ($migration_complete === false) {
+      return null;
+    }
+    return new Carbon($migration_complete->created_at);
   }
 }

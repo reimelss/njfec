@@ -16,12 +16,12 @@ class EmailAction implements Filter {
   const ACTION_CLICKED = 'clicked';
   const ACTION_NOT_CLICKED = 'notClicked';
 
-  private static $allowed_actions = array(
+  private static $allowed_actions = [
     EmailAction::ACTION_OPENED,
     EmailAction::ACTION_NOT_OPENED,
     EmailAction::ACTION_CLICKED,
     EmailAction::ACTION_NOT_CLICKED,
-  );
+  ];
 
   /** @var int */
   private $newsletter_id;
@@ -43,7 +43,7 @@ class EmailAction implements Filter {
    */
   public function __construct($action, $newsletter_id, $link_id = null, $connect = null) {
     $this->newsletter_id = (int)$newsletter_id;
-    if($link_id) {
+    if ($link_id) {
       $this->link_id = (int)$link_id;
     }
     $this->setAction($action);
@@ -51,20 +51,20 @@ class EmailAction implements Filter {
   }
 
   private function setAction($action) {
-    if(!in_array($action, EmailAction::$allowed_actions)) {
+    if (!in_array($action, EmailAction::$allowed_actions)) {
       throw new \InvalidArgumentException("Unknown action " . $action);
     }
     $this->action = $action;
   }
 
   function toSql(\ORM $orm) {
-    if(($this->action === EmailAction::ACTION_CLICKED) || ($this->action === EmailAction::ACTION_NOT_CLICKED)) {
+    if (($this->action === EmailAction::ACTION_CLICKED) || ($this->action === EmailAction::ACTION_NOT_CLICKED)) {
       $table = StatisticsClicks::$_table;
     } else {
       $table = StatisticsOpens::$_table;
     }
 
-    if(($this->action === EmailAction::ACTION_NOT_CLICKED) || ($this->action === EmailAction::ACTION_NOT_OPENED)) {
+    if (($this->action === EmailAction::ACTION_NOT_CLICKED) || ($this->action === EmailAction::ACTION_NOT_OPENED)) {
       $orm->rawJoin(
         'INNER JOIN ' . StatisticsNewsletters::$_table,
         'statssent.subscriber_id = ' . Subscriber::$_table . '.id AND statssent.newsletter_id = ' . $this->newsletter_id,
@@ -83,7 +83,7 @@ class EmailAction implements Filter {
         'stats'
       );
     }
-    if(($this->action === EmailAction::ACTION_CLICKED) && ($this->link_id)) {
+    if (($this->action === EmailAction::ACTION_CLICKED) && ($this->link_id)) {
       $orm->where('stats.link_id', $this->link_id);
     }
     return $orm;
@@ -91,19 +91,19 @@ class EmailAction implements Filter {
 
   private function createNotStatsJoin() {
     $clause = 'statssent.subscriber_id = stats.subscriber_id AND stats.newsletter_id = ' . $this->newsletter_id;
-    if(($this->action === EmailAction::ACTION_NOT_CLICKED) && ($this->link_id)) {
+    if (($this->action === EmailAction::ACTION_NOT_CLICKED) && ($this->link_id)) {
       $clause .= ' AND stats.link_id = ' . $this->link_id;
     }
     return $clause;
   }
 
   function toArray() {
-    return array(
+    return [
       'action' => $this->action,
       'newsletter_id' => $this->newsletter_id,
       'link_id' => $this->link_id,
       'connect' => $this->connect,
       'segmentType' => EmailAction::SEGMENT_TYPE,
-    );
+    ];
   }
 }

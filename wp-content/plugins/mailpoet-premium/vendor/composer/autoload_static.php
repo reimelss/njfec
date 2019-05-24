@@ -4,12 +4,13 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitf0d3abc170dcb10dbe8553d4df6de3d5
+class ComposerStaticInit1b49008f902593246ae75fecb609a55a
 {
     public static $prefixLengthsPsr4 = array (
         'M' => 
         array (
             'MailPoet\\Premium\\' => 17,
+            'MailPoetGenerated\\' => 18,
         ),
     );
 
@@ -18,19 +19,25 @@ class ComposerStaticInitf0d3abc170dcb10dbe8553d4df6de3d5
         array (
             0 => __DIR__ . '/../..' . '/lib',
         ),
+        'MailPoetGenerated\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/generated',
+        ),
     );
 
     public static $classMap = array (
+        'MailPoetGenerated\\PremiumCachedContainer' => __DIR__ . '/../..' . '/generated/PremiumCachedContainer.php',
         'MailPoet\\Premium\\API\\JSON\\v1\\AutomaticEmails' => __DIR__ . '/../..' . '/lib/API/JSON/v1/AutomaticEmails.php',
         'MailPoet\\Premium\\API\\JSON\\v1\\DynamicSegments' => __DIR__ . '/../..' . '/lib/API/JSON/v1/DynamicSegments.php',
         'MailPoet\\Premium\\API\\JSON\\v1\\NewsletterLinks' => __DIR__ . '/../..' . '/lib/API/JSON/v1/NewsletterLinks.php',
         'MailPoet\\Premium\\API\\JSON\\v1\\Stats' => __DIR__ . '/../..' . '/lib/API/JSON/v1/Stats.php',
+        'MailPoet\\Premium\\Analytics\\Reporter' => __DIR__ . '/../..' . '/lib/Analytics/Reporter.php',
         'MailPoet\\Premium\\AutomaticEmails\\AutomaticEmails' => __DIR__ . '/../..' . '/lib/AutomaticEmails/AutomaticEmails.php',
         'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\AbandonedCart' => __DIR__ . '/../..' . '/lib/AutomaticEmails/WooCommerce/Events/AbandonedCart.php',
-        'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\BigSpender' => __DIR__ . '/../..' . '/lib/AutomaticEmails/WooCommerce/Events/BigSpender.php',
         'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\FirstPurchase' => __DIR__ . '/../..' . '/lib/AutomaticEmails/WooCommerce/Events/FirstPurchase.php',
         'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\PurchasedInCategory' => __DIR__ . '/../..' . '/lib/AutomaticEmails/WooCommerce/Events/PurchasedInCategory.php',
         'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\PurchasedProduct' => __DIR__ . '/../..' . '/lib/AutomaticEmails/WooCommerce/Events/PurchasedProduct.php',
+        'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Helper' => __DIR__ . '/../..' . '/lib/AutomaticEmails/WooCommerce/Helper.php',
         'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\WooCommerce' => __DIR__ . '/../..' . '/lib/AutomaticEmails/WooCommerce/WooCommerce.php',
         'MailPoet\\Premium\\Config\\Activator' => __DIR__ . '/../..' . '/lib/Config/Activator.php',
         'MailPoet\\Premium\\Config\\Database' => __DIR__ . '/../..' . '/lib/Config/Database.php',
@@ -42,6 +49,7 @@ class ComposerStaticInitf0d3abc170dcb10dbe8553d4df6de3d5
         'MailPoet\\Premium\\Config\\Migrator' => __DIR__ . '/../..' . '/lib/Config/Migrator.php',
         'MailPoet\\Premium\\Config\\Populator' => __DIR__ . '/../..' . '/lib/Config/Populator.php',
         'MailPoet\\Premium\\Config\\Renderer' => __DIR__ . '/../..' . '/lib/Config/Renderer.php',
+        'MailPoet\\Premium\\DI\\ContainerConfigurator' => __DIR__ . '/../..' . '/lib/DI/ContainerConfigurator.php',
         'MailPoet\\Premium\\DynamicSegments\\Exceptions\\ErrorSavingException' => __DIR__ . '/../..' . '/lib/DynamicSegments/Exceptions/ErrorSavingException.php',
         'MailPoet\\Premium\\DynamicSegments\\Exceptions\\InvalidSegmentTypeException' => __DIR__ . '/../..' . '/lib/DynamicSegments/Exceptions/InvalidSegmentTypeException.php',
         'MailPoet\\Premium\\DynamicSegments\\Filters\\EmailAction' => __DIR__ . '/../..' . '/lib/DynamicSegments/Filters/EmailAction.php',
@@ -73,9 +81,9 @@ class ComposerStaticInitf0d3abc170dcb10dbe8553d4df6de3d5
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitf0d3abc170dcb10dbe8553d4df6de3d5::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitf0d3abc170dcb10dbe8553d4df6de3d5::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitf0d3abc170dcb10dbe8553d4df6de3d5::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit1b49008f902593246ae75fecb609a55a::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit1b49008f902593246ae75fecb609a55a::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit1b49008f902593246ae75fecb609a55a::$classMap;
 
         }, null, ClassLoader::class);
     }

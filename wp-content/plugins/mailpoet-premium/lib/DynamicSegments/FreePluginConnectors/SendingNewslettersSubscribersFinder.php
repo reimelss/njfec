@@ -28,7 +28,7 @@ class SendingNewslettersSubscribersFinder {
    * @return Subscriber[]
    */
   function findSubscribersInSegment(Segment $segment, array $subscribers_to_process_ids) {
-    if($segment->type !== DynamicSegment::TYPE_DYNAMIC) return array();
+    if ($segment->type !== DynamicSegment::TYPE_DYNAMIC) return [];
     $dynamic_segment = $this->single_segment_loader->load($segment->id);
     return $this->subscribers_ids_loader->load($dynamic_segment, $subscribers_to_process_ids);
   }
@@ -39,15 +39,15 @@ class SendingNewslettersSubscribersFinder {
    * @return array
    */
   function getSubscriberIdsInSegment(Segment $segment) {
-    if($segment->type !== DynamicSegment::TYPE_DYNAMIC) return [];
+    if ($segment->type !== DynamicSegment::TYPE_DYNAMIC) return [];
     $dynamic_segment = $this->single_segment_loader->load($segment->id);
     $result = $this->subscribers_ids_loader->load($dynamic_segment);
     return $this->createResultArray($result);
   }
 
   private function createResultArray($subscribers) {
-    $result = array();
-    foreach($subscribers as $subscriber) {
+    $result = [];
+    foreach ($subscribers as $subscriber) {
       $result[] = $subscriber->asArray();
     }
     return $result;

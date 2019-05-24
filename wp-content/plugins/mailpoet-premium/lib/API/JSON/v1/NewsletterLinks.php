@@ -8,12 +8,12 @@ use MailPoet\Models\NewsletterLink;
 
 class NewsletterLinks extends APIEndpoint {
 
-  public $permissions = array(
+  public $permissions = [
     'global' => AccessControl::PERMISSION_MANAGE_SEGMENTS,
-  );
+  ];
 
-  function get($data = array()) {
-    $links = NewsletterLink::select(array('id', 'url'))->where('newsletter_id', $data['newsletterId'])->findArray();
+  function get($data = []) {
+    $links = NewsletterLink::select(['id', 'url'])->where('newsletter_id', $data['newsletterId'])->findArray();
     return $this->successResponse($links);
   }
 

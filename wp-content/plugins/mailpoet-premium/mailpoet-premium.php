@@ -1,15 +1,15 @@
 <?php
-if(!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) exit;
 
 /*
  * Plugin Name: MailPoet 3 Premium (New)
- * Version: 3.0.32
+ * Version: 3.0.52
  * Plugin URI: http://www.mailpoet.com
  * Description: This plugin adds Premium features to the free version of MailPoet and unlocks the limit of 2,000 subscribers. Enjoy!
  * Author: MailPoet
  * Author URI: http://www.mailpoet.com
  * Requires at least: 4.7
- * Tested up to: 4.9
+ * Tested up to: 5.1
  *
  * Text Domain: mailpoet-premium
  * Domain Path: /lang/
@@ -20,8 +20,8 @@ if(!defined('ABSPATH')) exit;
  */
 
 $mailpoet_premium = array(
-  'version' => '3.0.32',
-  'free_version_required' => '3.15', // minor version
+  'version' => '3.0.52',
+  'free_version_required' => '3.26', // minor version
   'filename' => __FILE__,
   'path' => dirname(__FILE__),
   'autoloader' => dirname(__FILE__) . '/vendor/autoload.php',
@@ -32,13 +32,13 @@ require_once(ABSPATH . 'wp-admin/includes/plugin.php');
 
 function mailpoet_premium_deactivate_plugin() {
   deactivate_plugins(plugin_basename(__FILE__));
-  if(!empty($_GET['activate'])) {
+  if (!empty($_GET['activate'])) {
     unset($_GET['activate']);
   }
 }
 
 // Check for minimum supported PHP version
-if(version_compare(phpversion(), '5.6.0', '<')) {
+if (version_compare(phpversion(), '5.6.0', '<')) {
   add_action('admin_notices', 'mailpoet_premium_php_version_notice');
   // deactivate the plugin
   add_action('admin_init', 'mailpoet_premium_deactivate_plugin');
@@ -57,7 +57,7 @@ function mailpoet_premium_php_version_notice() {
 }
 
 // Check for presence of core dependencies
-if(!file_exists($mailpoet_premium['autoloader']) || !file_exists($mailpoet_premium['initializer'])) {
+if (!file_exists($mailpoet_premium['autoloader']) || !file_exists($mailpoet_premium['initializer'])) {
   add_action('admin_notices', 'mailpoet_premium_core_dependency_notice');
   // deactivate the plugin
   add_action('admin_init', 'mailpoet_premium_deactivate_plugin');

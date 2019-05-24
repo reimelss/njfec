@@ -4,7 +4,8 @@ namespace MailPoet\Premium\Config;
 
 use MailPoet\Config\AccessControl;
 use MailPoet\Models\Newsletter;
-use MailPoet\WP\Hooks;
+use MailPoet\WooCommerce\Helper as WooCommerceHelper;
+use MailPoet\WP\Functions as WPFunctions;
 
 class Menu {
 
@@ -17,94 +18,101 @@ class Menu {
   /** @var \MailPoet\Config\Menu */
   private $free_plugin_menu;
 
-  function __construct(Renderer $renderer, AccessControl $access_control, \MailPoet\Config\Menu $free_plugin_menu) {
+  /** @var WooCommerceHelper */
+  private $woocommerce_helper;
+
+  private $wp;
+
+  function __construct(Renderer $renderer, AccessControl $access_control, \MailPoet\Config\Menu $free_plugin_menu, WPFunctions $wp, WooCommerceHelper $woocommerce_helper) {
     $this->access_control = $access_control;
     $this->free_plugin_menu = $free_plugin_menu;
     $this->renderer = $renderer;
+    $this->wp = $wp;
+    $this->woocommerce_helper = $woocommerce_helper;
   }
 
   function afterLists() {
-    if($this->access_control->validatePermission(AccessControl::PERMISSION_MANAGE_SEGMENTS)) {
+    if ($this->access_control->validatePermission(AccessControl::PERMISSION_MANAGE_SEGMENTS)) {
       // Dynamic segments page
       // Only show this page in menu if the Premium plugin is activated
-      $dynamic_segments_page = add_submenu_page(
+      $dynamic_segments_page = WPFunctions::get()->addSubmenuPage(
         \MailPoet\Config\Menu::MAIN_PAGE_SLUG,
         $this->free_plugin_menu->setPageTitle(__('Segments', 'mailpoet-premium')),
-        __('Segments', 'mailpoet-premium'),
+        WPFunctions::get()->__('Segments', 'mailpoet-premium'),
         AccessControl::PERMISSION_MANAGE_SEGMENTS,
         'mailpoet-dynamic-segments',
-        array(
+        [
           $this,
-          'dynamicSegments'
-        )
+          'dynamicSegments',
+        ]
       );
 
       // add limit per page to screen options
-      add_action('load-' . $dynamic_segments_page, function() {
-        add_screen_option('per_page', array(
-          'label' => _x('Number of segments per page', 'segments per page (screen options)', 'mailpoet-premium'),
-          'option' => 'mailpoet_dynamic_segments_per_page'
-        ));
+      WPFunctions::get()->addAction('load-' . $dynamic_segments_page, function() {
+        WPFunctions::get()->addScreenOption('per_page', [
+          'label' => WPFunctions::get()->x('Number of segments per page', 'segments per page (screen options)', 'mailpoet-premium'),
+          'option' => 'mailpoet_dynamic_segments_per_page',
+        ]);
       });
     }
   }
 
   function dynamicSegments() {
-    $data = array();
+    $data = [];
 
     $data['page_name'] = 'dynamic_segments';
 
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_pages_dynamic_segments',
-      array($this, 'renderDynamicSegments')
+      [$this, 'renderDynamicSegments']
     );
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_pages_translations_dynamic_segments',
-      array($this, 'renderDynamicSegmentsTranslations')
+      [$this, 'renderDynamicSegmentsTranslations']
     );
     $this->free_plugin_menu->displayPage('blank.html', $data);
   }
 
   function renderDynamicSegments() {
-    $data = array();
+    $data = [];
 
     $data['items_per_page'] = $this->free_plugin_menu->getLimitPerPage('dynamic_segments');
-    $wp_roles = get_editable_roles();
+    $wp_roles = WPFunctions::get()->getEditableRoles();
     $data['wordpress_editable_roles_list'] = array_map(function($role_id, $role) {
-      return array(
+      return [
         'role_id' => $role_id,
         'role_name' => $role['name'],
-      );
+      ];
     }, array_keys($wp_roles), $wp_roles);
-    $data['newsletters_list'] = Newsletter::select(array('id', 'subject', 'sent_at'))
+    $data['newsletters_list'] = Newsletter::select(['id', 'subject', 'sent_at'])
       ->whereNull('deleted_at')
       ->where('type', Newsletter::TYPE_STANDARD)
       ->orderByExpr('ISNULL(sent_at) DESC, sent_at DESC')->findArray();
 
 
-    $data['product_categories'] = get_categories(array('taxonomy' => 'product_cat'));
+    $data['product_categories'] = WPFunctions::get()->getCategories(['taxonomy' => 'product_cat']);
     usort($data['product_categories'], function ($a, $b) {
       return strcmp($a->cat_name, $b->cat_name);
     });
     $data['products'] = $this->getProducts();
-    $data['is_woocommerce_active'] = class_exists('WooCommerce');
+    $data['is_woocommerce_active'] = $this->woocommerce_helper->isWooCommerceActive();
 
     echo $this->renderer->render('dynamicSegments.html', $data);
   }
 
   private function getProducts() {
-    $args = array('post_type' => 'product', 'orderby' => 'title', 'order' => 'ASC', 'numberposts' => -1);
-    $products = get_posts($args);
+    $args = ['post_type' => 'product', 'orderby' => 'title', 'order' => 'ASC', 'numberposts' => -1];
+    $products = WPFunctions::get()->getPosts($args);
     return array_map(function ($product) {
-      return array(
+      return [
         'title' => $product->post_title,
         'ID' => $product->ID,
-      );
+      ];
     }, $products);
   }
 
   function renderDynamicSegmentsTranslations() {
-    $data = array();
+    $data = [];
 
     echo $this->renderer->render('dynamicSegmentsTranslations.html', $data);
   }

@@ -37,38 +37,39 @@ class API {
   }
 
   function getSubscriberFields() {
-    $data = array(
-      array(
+    $data = [
+      [
         'id' => 'email',
-        'name' => WPFunctions::get()->__('Email', 'mailpoet')
-      ),
-      array(
+        'name' => WPFunctions::get()->__('Email', 'mailpoet'),
+      ],
+      [
         'id' => 'first_name',
-        'name' => WPFunctions::get()->__('First name', 'mailpoet')
-      ),
-      array(
+        'name' => WPFunctions::get()->__('First name', 'mailpoet'),
+      ],
+      [
         'id' => 'last_name',
-        'name' => WPFunctions::get()->__('Last name', 'mailpoet')
-      )
-    );
+        'name' => WPFunctions::get()->__('Last name', 'mailpoet'),
+      ],
+    ];
 
-    $custom_fields = CustomField::selectMany(array('id', 'name'))->findMany();
+    $custom_fields = CustomField::selectMany(['id', 'name'])->findMany();
     foreach ($custom_fields as $custom_field) {
-      $data[] = array(
+      $data[] = [
         'id' => 'cf_' . $custom_field->id,
-        'name' => $custom_field->name
-      );
+        'name' => $custom_field->name,
+      ];
     }
 
     return $data;
   }
 
-  function subscribeToList($subscriber_id, $segment_id, $options = array()) {
-    return $this->subscribeToLists($subscriber_id, array($segment_id), $options);
+  function subscribeToList($subscriber_id, $segment_id, $options = []) {
+    return $this->subscribeToLists($subscriber_id, [$segment_id], $options);
   }
 
-  function subscribeToLists($subscriber_id, array $segments_ids, $options = array()) {
+  function subscribeToLists($subscriber_id, array $segments_ids, $options = []) {
     $schedule_welcome_email = (isset($options['schedule_welcome_email']) && $options['schedule_welcome_email'] === false) ? false : true;
+    $send_confirmation_email = (isset($options['send_confirmation_email']) && $options['send_confirmation_email'] === false) ? false : true;
 
     if (empty($segments_ids)) {
       throw new \Exception(__('At least one segment ID is required.', 'mailpoet'));
@@ -88,7 +89,7 @@ class API {
     }
 
     // throw exception when trying to subscribe to WP Users or WooCommerce Customers segments
-    $found_segments_ids = array();
+    $found_segments_ids = [];
     foreach ($found_segments as $found_segment) {
       if ($found_segment->type === Segment::TYPE_WP_USERS) {
         throw new \Exception(__(sprintf("Can't subscribe to a WordPress Users list with ID %d.", $found_segment->id), 'mailpoet'));
@@ -116,11 +117,25 @@ class API {
       $this->_scheduleWelcomeNotification($subscriber, $found_segments_ids);
     }
 
+    // send confirmation email
+    if (
+      $send_confirmation_email
+      && $subscriber->status === Subscriber::STATUS_UNCONFIRMED
+      && (int)$subscriber->count_confirmations === 0
+    ) {
+      $result = $this->_sendConfirmationEmail($subscriber);
+      if (!$result && $subscriber->getErrors()) {
+        throw new \Exception(
+          WPFunctions::get()->__(sprintf('Subscriber added to lists, but confirmation email failed to send: %s', strtolower(implode(', ', $subscriber->getErrors()))), 'mailpoet')
+        );
+      }
+    }
+
     return $subscriber->withCustomFields()->withSubscriptions()->asArray();
   }
 
   function unsubscribeFromList($subscriber_id, $segment_id) {
-    return $this->unsubscribeFromLists($subscriber_id, array($segment_id));
+    return $this->unsubscribeFromLists($subscriber_id, [$segment_id]);
   }
 
   function unsubscribeFromLists($subscriber_id, array $segments_ids) {
@@ -142,7 +157,7 @@ class API {
     }
 
     // throw exception when trying to subscribe to WP Users or WooCommerce Customers segments
-    $found_segments_ids = array();
+    $found_segments_ids = [];
     foreach ($found_segments as $segment) {
       if ($segment->type === Segment::TYPE_WP_USERS) {
         throw new \Exception(__(sprintf("Can't unsubscribe from a WordPress Users list with ID %d.", $segment->id), 'mailpoet'));
@@ -172,7 +187,7 @@ class API {
       ->findArray();
   }
 
-  function addSubscriber(array $subscriber, $segments = array(), $options = array()) {
+  function addSubscriber(array $subscriber, $segments = [], $options = []) {
     $send_confirmation_email = (isset($options['send_confirmation_email']) && $options['send_confirmation_email'] === false) ? false : true;
     $schedule_welcome_email = (isset($options['schedule_welcome_email']) && $options['schedule_welcome_email'] === false) ? false : true;
     $skip_subscriber_notification = (isset($options['skip_subscriber_notification']) && $options['skip_subscriber_notification'] === true) ? true : false;
@@ -217,17 +232,9 @@ class API {
 
     // subscribe to segments and optionally: 1) send confirmation email, 2) schedule welcome email(s)
     if (!empty($segments)) {
-      $this->subscribeToLists($new_subscriber->id, $segments);
-
-      // send confirmation email
-      if ($send_confirmation_email && $new_subscriber->status === Subscriber::STATUS_UNCONFIRMED) {
-        $result = $this->_sendConfirmationEmail($new_subscriber);
-        if (!$result && $new_subscriber->getErrors()) {
-          throw new \Exception(
-            WPFunctions::get()->__(sprintf('Subscriber added, but confirmation email failed to send: %s', strtolower(implode(', ', $new_subscriber->getErrors()))), 'mailpoet')
-          );
-        }
-      }
+      $this->subscribeToLists($new_subscriber->id, $segments, [
+        'send_confirmation_email' => $send_confirmation_email,
+      ]);
 
       // schedule welcome email(s)
       if ($schedule_welcome_email && $new_subscriber->status === Subscriber::STATUS_SUBSCRIBED) {

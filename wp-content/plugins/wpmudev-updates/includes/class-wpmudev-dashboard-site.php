@@ -4,7 +4,7 @@
  * Manages all access to the local WordPress site;
  * For example: Storing and fetching settings, activating plugins, etc.
  *
- * @since  4.0.0
+ * @since   4.0.0
  * @package WPMUDEV_Dashboard
  */
 
@@ -44,6 +44,15 @@ class WPMUDEV_Dashboard_Site {
 	public $id_upfront = 938297;
 
 	/**
+	 * The PID of the Upfront builder plugin.
+	 * Upfront is required for this plugin to function. This is used to automatically
+	 * install Upfront when required.
+	 *
+	 * @var int (Project ID)
+	 */
+	public $id_upfront_builder = 1107287;
+
+	/**
 	 * The PID of our "133 Theme Pack" package.
 	 * This package needs some special treatment; since it contains many themes
 	 * we need to update the package when only one of those themes changed.
@@ -61,68 +70,62 @@ class WPMUDEV_Dashboard_Site {
 	public $id_legacy_themes = 237;
 
 	/**
-	 * Internal cache for plugin options (stored in DB).
+	 * Allows specific private ajax actions to work for non-allowed users
 	 *
-	 * This property is used by the functions get_option() and set_option()
-	 *
-	 * @var array (List of settings)
+	 * @var array Ajax actions that non-allowed users can access
 	 */
-	protected $option_cache = array();
+	protected $ajax_allowed_bypasses = array();
 
 	/**
-	 * Internal cache for plugin options (stored in DB).
-	 *
-	 * This property is used by the functions get_option() and set_option()
-	 *
-	 * @var array (List of settings)
-	 */
-	protected $option_hash = array();
-
-	/**
-	 * Internal cache flag used by the function get_project_infos()
-	 *
-	 * This property is set to true when project details are modified, e.g.
-	 * after a project was updated.
+	 * Flag that is tripped to schedule api refresh right before display output (avoid multiple)
 	 *
 	 * @var bool
 	 */
-	protected $flush_info_cache = false;
+	protected static $_refresh_updates_flag = false;
 
 	/**
-	 * Internal cache flag used by function scan_fs_local_projects()
-	 *
-	 * This property is set to true when a plugin/theme is installed or updated.
-	 * It means, that the FS infos changed while the HTTP request was processed.
-	 * In any other case we assume, that the FS needs to be scanned only once
-	 * per request.
+	 * Flag that is tripped to schedule api refresh at the end of the page load (avoid multiple)
 	 *
 	 * @var bool
 	 */
-	protected $flush_fs_cache = false;
+	protected static $_refresh_shutdown_flag = false;
 
 	/**
-	 * Internal cache flag used by funcitons filter_..._update_count()
+	 * Caches the modified theme-updates transient.
 	 *
-	 * This property is set true when a transient is deleted or a plugin/theme
-	 * was installed or update.
-	 *
-	 * @var bool
+	 * @var array
 	 */
-	protected $flush_transient = false;
+	protected static $_cache_themeupdates = false;
+
+	/**
+	 * Caches the modified plugin-updates transient.
+	 *
+	 * @var array
+	 */
+	protected static $_cache_pluginupdates = false;
+
+	/**
+	 * Stores return values of get_project_infos()
+	 *
+	 * @var array
+	 */
+	protected static $_cache_projectinfos = false;
 
 	/**
 	 * Set up the Site module. Here we load and initialize the settings.
 	 *
 	 * @since 4.0.0
+	 *
 	 * @param string $main_file Path to the plugins main file.
+	 *
 	 * @internal
 	 */
 	public function __construct( $main_file ) {
 		$this->init_flags();
 
 		// Prepare module settings.
-		$this->plugin_url = trailingslashit( plugins_url( '', $main_file ) );
-		$this->plugin_dir = dirname( plugin_basename( $main_file ) );
+		$this->plugin_url  = trailingslashit( plugins_url( '', $main_file ) );
+		$this->plugin_dir  = dirname( plugin_basename( $main_file ) );
 		$this->plugin_path = trailingslashit( dirname( $main_file ) );
 
 		// Process any actions triggered by the UI (e.g. save data).
@@ -143,63 +146,85 @@ class WPMUDEV_Dashboard_Site {
 			'wdp-save-setting-int',
 			'wdp-show-popup',
 			'wdp-changelog',
+			'wdp-credentials',
+			'wdp-analytics',
+			'wdp-project-delete',
+			'wdp-hub-sync',
+			'wdp-project-upgrade-free',
 		);
 		foreach ( $ajax_actions as $action ) {
 			add_action( "wp_ajax_$action", array( $this, 'process_ajax' ) );
 		}
 
+		// AUTO login ajax (no nonce, its called by our auto install server)
+		add_action( "wp_ajax_wdp-dashboard-autologin", array( $this, 'dashboard_autologin' ) );
+
+		$this->ajax_allowed_bypasses = array( 'changelog', 'analytics' );
+
 		$nopriv_ajax_actions = array(
 			'wdpunauth',
-			'wdpupdate',
-			'wdpreport',
-			'wdplogout',
 		);
 		foreach ( $nopriv_ajax_actions as $action ) {
 			add_action( "wp_ajax_$action", array( $this, 'nopriv_process_ajax' ) );
 			add_action( "wp_ajax_nopriv_$action", array( $this, 'nopriv_process_ajax' ) );
 		}
 
-		// Check for compatibility issues and display a notificaton if needed.
+		add_action( 'wp_ajax_wdpun-connect', array( $this, 'ajax_connect' ) );
+
+		// Check for compatibility issues and display a notification if needed.
 		add_action(
 			'admin_init',
 			array( $this, 'compatibility_warnings' )
 		);
 
-		// Auto-Install scheduled updates.
-		add_action(
-			'admin_init',
-			array( $this, 'process_auto_upgrade' )
-		);
-
-		add_action( 'update-core.php', array( $this, 'refresh_local_projects_wrapper' ) );
-		add_action( 'load-plugins.php', array( $this, 'refresh_local_projects_wrapper' ) );
-		add_action( 'load-update.php', array( $this, 'refresh_local_projects_wrapper' ) );
-		add_action( 'load-update-core.php', array( $this, 'refresh_local_projects_wrapper' ) );
-		add_action( 'load-themes.php', array( $this, 'refresh_local_projects_wrapper' ) );
-		add_action( 'wp_update_plugins', array( $this, 'refresh_local_projects_wrapper' ) );
-		add_action( 'wp_update_themes', array( $this, 'refresh_local_projects_wrapper' ) );
+		add_action( 'update-core.php', array( $this, 'refresh_local_projects_wrapper' ), 99 );
+		add_action( 'load-plugins.php', array( $this, 'refresh_local_projects_wrapper' ), 99 );
+		add_action( 'load-update.php', array( $this, 'refresh_local_projects_wrapper' ), 99 );
+		add_action( 'load-update-core.php', array( $this, 'refresh_local_projects_wrapper' ), 99 );
+		add_action( 'load-themes.php', array( $this, 'refresh_local_projects_wrapper' ), 99 );
+		// really only used when hacking version num.
+		add_action( 'load-plugin-editor.php', array( $this, 'refresh_local_projects_wrapper' ), 99 );
+		add_action( 'load-theme-editor.php', array( $this, 'refresh_local_projects_wrapper' ), 99 );
 
 		// Refresh after upgrade/install.
 		add_action(
 			'upgrader_process_complete',
 			array( $this, 'after_local_files_changed' ),
-			10, 999
+			10,
+			999
 		);
 		add_action(
-			'delete_site_transient_update_plugins',
-			array( $this, 'after_transient_changed' )
+			'set_site_transient_update_plugins',
+			array( $this, 'schedule_shutdown_refresh' )
 		);
 		add_action(
+			'set_site_transient_update_themes',
+			array( $this, 'schedule_shutdown_refresh' )
+		);
+		add_filter(
 			'delete_site_transient_update_themes',
-			array( $this, 'after_transient_changed' )
-		);
+			array( $this, 'schedule_shutdown_refresh' )
+		); //runs when a theme is deleted
+
+		//refresh after plugin/theme is activated/deactivated/deleted
+		add_action( 'activated_plugin', array( $this, 'schedule_shutdown_refresh' ) );
+		add_action( 'deactivated_plugin', array( $this, 'schedule_shutdown_refresh' ) );
+		add_action( 'deleted_plugin', array( $this, 'schedule_shutdown_refresh' ) );
+		if ( is_multisite() ) {
+			add_action( 'update_site_option_allowedthemes', array( $this, 'schedule_shutdown_refresh' ) ); //network enable/disable
+		}
+		if ( is_main_site() ) {
+			add_action( 'after_switch_theme', array( $this, 'schedule_shutdown_refresh' ) ); //per site activation
+		}
+
+		add_action( 'shutdown', array( $this, 'shutdown_refresh' ) );
 
 		// Add WPMUDEV projects to the WP updates list.
-		add_action(
+		add_filter(
 			'site_transient_update_plugins',
 			array( $this, 'filter_plugin_update_count' )
 		);
-		add_action(
+		add_filter(
 			'site_transient_update_themes',
 			array( $this, 'filter_theme_update_count' )
 		);
@@ -208,12 +233,14 @@ class WPMUDEV_Dashboard_Site {
 		add_filter(
 			'plugins_api',
 			array( $this, 'filter_plugin_update_info' ),
-			101, 3 // Run later to work with bad autoupdate plugins.
+			101,
+			3 // Run later to work with bad autoupdate plugins.
 		);
 		add_filter(
 			'themes_api',
 			array( $this, 'filter_plugin_update_info' ),
-			101, 3 // Run later to work with bad autoupdate plugins.
+			101,
+			3 // Run later to work with bad autoupdate plugins.
 		);
 
 		// Hook up our own plugin changelog iframe.
@@ -242,6 +269,23 @@ class WPMUDEV_Dashboard_Site {
 		}
 		*/
 
+		// Whitelabel-ing plugin(s) pages
+		add_action(
+			'admin_enqueue_scripts',
+			array( $this, 'whitelabel_plugin_admin_pages' )
+		);
+
+		// Filtering wpmudev branding being used
+		add_filter( 'wpmudev_branding', array( $this, 'get_wpmudev_branding' ), 10, 2 );
+		add_filter( 'wpmudev_branding_hide_branding', array( $this, 'get_wpmudev_branding_hide_branding' ) );
+		add_filter( 'wpmudev_branding_hero_image', array( $this, 'get_wpmudev_branding_hero_image' ) );
+		add_filter( 'wpmudev_branding_change_footer', array( $this, 'get_wpmudev_branding_change_footer' ) );
+		add_filter( 'wpmudev_branding_footer_text', array( $this, 'get_wpmudev_branding_footer_text' ) );
+		add_filter( 'wpmudev_branding_hide_doc_link', array( $this, 'get_wpmudev_branding_hide_doc_link' ) );
+
+		// Tracking code for analytics module
+		add_action( 'wp_footer', array( $this, 'analytics_tracking_code' ) );
+
 		/**
 		 * Run custom initialization code for the Site module.
 		 *
@@ -260,35 +304,45 @@ class WPMUDEV_Dashboard_Site {
 	 * Function contains a complete list of all used Dashboard settings.
 	 *
 	 * @since  4.0.0
-	 * @internal
+	 * @since  4.5.3 Add whitelabel options
+	 *
 	 * @param  string $action Can be set to 'reset' to overwrite all plugin
-	 *                options with the initial value (as if plugin was just
-	 *                installed for the first time).
-	 *                Any other value will only add the option if it's missing.
+	 *                        options with the initial value (as if plugin was just
+	 *                        installed for the first time).
+	 *                        Any other value will only add the option if it's missing.
 	 */
 	public function init_options( $action = 'init' ) {
 		// Initialize the plugin options stored in the WP Database.
 		$options = array(
-			'limit_to_user' => '',
-			'remote_access' => '',
-			'refresh_remote_flag' => 0,
-			'refresh_local_flag' => 0,
-			'refresh_profile_flag' => 0,
-			'updates_data' => '',
-			'profile_data' => '',
-			'farm133_themes' => '',
-			'updates_available' => '',
-			'last_run_updates' => 0,
-			'last_run_profile' => 0,
-			'last_check_upfront' => 0,
-			'last_check_autoupdate' => 0,
-			'staff_notes' => '',
-			'redirected_v4' => 0, // We want to redirect all users after first v4 activation!
-			'autoupdate_dashboard' => 1,
-			'autoupdate_schedule' => array(),
-			'notifications' => array(),
+			'limit_to_user'                => '',
+			'remote_access'                => '',
+			'refresh_remote_flag'          => 0,
+			'refresh_profile_flag'         => 0,
+			'updates_data'                 => null,
+			'profile_data'                 => '',
+			'farm133_themes'               => '',
+			'updates_available'            => '',
+			'last_run_updates'             => 0,
+			'last_run_profile'             => 0,
+			'last_check_upfront'           => 0,
+			'staff_notes'                  => '',
+			'redirected_v4'                => 0, // We want to redirect all users after first v4 activation!
+			'autoupdate_dashboard'         => 1,
+			'notifications'                => array(),
 			// 'blog_active_projects' => array(), // Only used on multisite. Not finished.
-			'auth_user' => null, // NULL means: Ignore during 'reset' action.
+			'auth_user'                    => null, // NULL means: Ignore during 'reset' action.
+
+			// whitelabel options
+			'whitelabel_enabled'           => false,
+			'whitelabel_branding_enabled'  => false,
+			'whitelabel_branding_image'    => '',
+			'whitelabel_footer_enabled'    => false,
+			'whitelabel_footer_text'       => '',
+			'whitelabel_doc_links_enabled' => false,
+
+			// analytics options
+			'analytics_enabled'            => false,
+			'analytics_role'               => 'administrator',
 		);
 
 		foreach ( $options as $key => $default_val ) {
@@ -297,7 +351,9 @@ class WPMUDEV_Dashboard_Site {
 				$this->set_option( $key, $default_val );
 			} else {
 				// Do not reset, just add if missing.
-				if ( null === $default_val ) { $default_val = ''; }
+				if ( null === $default_val ) {
+					$default_val = '';
+				}
 				$this->add_option( $key, $default_val );
 			}
 		}
@@ -341,6 +397,9 @@ class WPMUDEV_Dashboard_Site {
 	 * - WPMUDEV_CUSTOM_API_SERVER .. Default: false
 	 *     Custom API Server from which to get membership details, etc.
 	 *
+	 * - WPMUDEV_API_SSLVERIFY .. Default: true
+	 *     Set to false if you are having ssl errors connecting to our API (insecure).
+	 *
 	 * - WPMUDEV_API_UNCOMPRESSED .. Default: false
 	 *     Set to true so API calls request uncompressed response values.
 	 *
@@ -369,24 +428,22 @@ class WPMUDEV_Dashboard_Site {
 		// Do not initialize: WPMUDEV_APIKEY!
 		// Do not initialize: WPMUDEV_IS_REMOTE!
 		$flags = array(
-			'WPMUDEV_LIMIT_TO_USER' => false,
+			'WPMUDEV_LIMIT_TO_USER'         => false,
 			'WPMUDEV_DISABLE_REMOTE_ACCESS' => false,
-			'WPMUDEV_MENU_LOCATION' => '3.012',
-			'WPMUDEV_NO_AUTOACTIVATE' => false,
-			'WPMUDEV_CUSTOM_API_SERVER' => false,
-			'WPMUDEV_API_UNCOMPRESSED' => false,
-			'WPMUDEV_API_AUTHORIZATION' => false,
-			'WPMUDEV_API_DEBUG' => false,
-			'WPMUDEV_API_DEBUG_ALL' => false,
+			'WPMUDEV_MENU_LOCATION'         => '3.012',
+			'WPMUDEV_NO_AUTOACTIVATE'       => false,
+			'WPMUDEV_CUSTOM_API_SERVER'     => false,
+			'WPMUDEV_API_UNCOMPRESSED'      => false,
+			'WPMUDEV_API_SSLVERIFY'         => true,
+			'WPMUDEV_API_AUTHORIZATION'     => false,
+			'WPMUDEV_API_DEBUG'             => false,
+			'WPMUDEV_API_DEBUG_ALL'         => false,
 		);
 
 		foreach ( $flags as $flag => $default_val ) {
-			if ( ! defined( $flag ) ) { define( $flag, $default_val ); }
-		}
-
-		if ( WPMUDEV_API_DEBUG && WPMUDEV_API_DEBUG_ALL ) {
-			// This marks a new request.
-			error_log( '[WPMUDEV] ========== API debugging enabled ==========' );
+			if ( ! defined( $flag ) ) {
+				define( $flag, $default_val );
+			}
 		}
 	}
 
@@ -395,6 +452,7 @@ class WPMUDEV_Dashboard_Site {
 	 *
 	 * @since  4.0.0
 	 * @internal
+	 *
 	 * @param  WP_Screen $current_screen The current_screen object.
 	 */
 	public function process_actions( $current_screen ) {
@@ -405,11 +463,11 @@ class WPMUDEV_Dashboard_Site {
 		// Remove the "Changes saved" message when user refreshes the browser window.
 		if ( empty( $_POST ) ) {
 			$err = isset( $_GET['failed'] ) ? intval( $_GET['failed'] ) : false;
-			$ok = isset( $_GET['success'] ) ? intval( $_GET['success'] ) : false;
+			$ok  = isset( $_GET['success'] ) ? intval( $_GET['success'] ) : false;
 
 			if ( ( $ok && $ok < time() ) || ( $err && $err < time() ) ) {
 				$url = esc_url_raw(
-					remove_query_arg( array( 'success', 'failed', 'wpmudev_msg' ) )
+					remove_query_arg( array( 'success', 'failed', 'wpmudev_msg', 'success-action', 'failed-action' ) )
 				);
 				header( 'X-Redirect-From: SITE process_actions top' );
 				wp_safe_redirect( $url );
@@ -423,13 +481,26 @@ class WPMUDEV_Dashboard_Site {
 		}
 
 		// Do nothing if either action or nonce is missing.
-		if ( empty( $_REQUEST['action'] ) ) { return; }
+		if ( empty( $_REQUEST['action'] ) ) {
+//			if ( isset( $_GET['success-action'] ) || isset( $_GET['failed-action'] ) ) {
+//				$url = esc_url_raw(
+//					remove_query_arg( array( 'success-action', 'failed-action' ) )
+//				);
+//				header( 'X-Redirect-From: SITE process_actions top' );
+//				wp_safe_redirect( $url );
+//				exit;
+//			}
+
+			return;
+		}
 
 		$action = $_REQUEST['action'];
 
 		// Skip the nonce-check if the action does not require it.
 		if ( ! in_array( $action, $no_nonce ) ) {
-			if ( empty( $_REQUEST['hash'] ) ) { return; }
+			if ( empty( $_REQUEST['hash'] ) ) {
+				return;
+			}
 			$nonce = $_REQUEST['hash'];
 
 			// Do nothing if the nonce is invalid.
@@ -443,19 +514,22 @@ class WPMUDEV_Dashboard_Site {
 			return;
 		}
 
-		$res = $this->_process_action( $action );
-		$redirect = remove_query_arg( array( 'action', 'hash', 'success', 'failed' ) );
+		$res      = $this->_process_action( $action );
+		$redirect = remove_query_arg( array( 'action', 'hash', 'success', 'failed', 'success-action', 'failed-action' ) );
 
 		switch ( $res ) {
 			case 'OK':
-				$redirect = add_query_arg( 'success', 2 + time(), $redirect );
+				$redirect = add_query_arg( 'success', 10 + time(), $redirect );
+				$redirect = add_query_arg( 'success-action', $action, $redirect );
 				break;
 
 			case 'ERR':
-				$redirect = add_query_arg( 'failed', 2 + time(), $redirect );
+				$redirect = add_query_arg( 'failed', 10 + time(), $redirect );
+				$redirect = add_query_arg( 'failed-action', $action, $redirect );
 				break;
 
 			case 'SILENT':
+			default:
 				// Nothing.
 				break;
 		}
@@ -474,7 +548,9 @@ class WPMUDEV_Dashboard_Site {
 	 *
 	 * @since  4.0.0
 	 * @internal
+	 *
 	 * @param  string $action The action to execute.
+	 *
 	 * @return string Either OK|SOK|ERR|SILENT.
 	 *         OK     .. Action successful. Display "Saved" message.
 	 *         ERR    .. Action failed. Display "Failed" message.
@@ -488,19 +564,32 @@ class WPMUDEV_Dashboard_Site {
 			// Tab: Support
 			// Function Grant support access.
 			case 'remote-grant':
-				$success = WPMUDEV_Dashboard::$api->enable_remote_access( 'start' );
+				if ( ! is_wpmudev_member() ) {
+					$success = false;
+				} else {
+					$success = WPMUDEV_Dashboard::$api->enable_remote_access( 'start' );
+				}
+
 				break;
 
 			// Tab: Support
 			// Function Revoke support access.
-			case 'remote-revoke';
-				$success = WPMUDEV_Dashboard::$api->revoke_remote_access();
+			case 'remote-revoke':
+				if ( ! current_user_can( 'edit_users' ) ) {
+					$success = false;
+				} else {
+					$success = WPMUDEV_Dashboard::$api->revoke_remote_access();
+				}
 				break;
 
 			// Tab: Support
 			// Function Extend support access.
 			case 'remote-extend':
-				$success = WPMUDEV_Dashboard::$api->enable_remote_access( 'extend' );
+				if ( ! is_wpmudev_member() ) {
+					$success = false;
+				} else {
+					$success = WPMUDEV_Dashboard::$api->enable_remote_access( 'extend' );
+				}
 				break;
 
 			// Tab: Support
@@ -508,9 +597,11 @@ class WPMUDEV_Dashboard_Site {
 			case 'staff-note':
 				$notes = '';
 				if ( isset( $_REQUEST['notes'] ) ) {
-					$notes = esc_textarea( $_REQUEST['notes'] );
+					$notes = stripslashes( $_REQUEST['notes'] );
 				}
 				WPMUDEV_Dashboard::$site->set_option( 'staff_notes', $notes );
+				// un silent message
+				$success = true;
 				break;
 
 			// Tab: Settings
@@ -534,11 +625,128 @@ class WPMUDEV_Dashboard_Site {
 			// Tab: Plugins
 			// Function to check for updates again.
 			case 'check-updates':
-				WPMUDEV_Dashboard::$site->set_option( 'refresh_remote_flag', 1 );
-				WPMUDEV_Dashboard::$site->set_option( 'refresh_local_flag', 1 );
 				WPMUDEV_Dashboard::$site->set_option( 'refresh_profile_flag', 1 );
-				WPMUDEV_Dashboard::$site->set_option( 'updates_available', false );
-				$success = 'SILENT';
+				WPMUDEV_Dashboard::$api->refresh_projects_data();
+				WPMUDEV_Dashboard::$site->refresh_local_projects( 'remote' );
+				// un silent message
+				$success = true;
+				break;
+
+			// Tab: Settings
+			// Function to setup whitelabel.
+			case 'whitelabel-setup':
+				$status = isset( $_REQUEST['status'] ) ? $_REQUEST['status'] : '';// wpcs CSRF ok. already validated on process_ajax
+				switch ( $status ) {
+					case 'activate':
+						$this->set_option( 'whitelabel_enabled', true );
+						// un silent message
+						$success = true;
+						break;
+					case 'deactivate':
+						$this->set_option( 'whitelabel_enabled', false );
+						// un silent message
+						$success = true;
+						break;
+					case 'settings':
+						$setting_data = $_REQUEST; // wpcs CSRF ok. already validated on process_ajax
+						$options_map  = array(
+							'branding_enabled'  => array(
+								'option_name' => 'whitelabel_branding_enabled',
+								'default'     => false,
+							),
+							'branding_image'    => array(
+								'option_name' => 'whitelabel_branding_image',
+								'default'     => '',
+							),
+							'footer_enabled'    => array(
+								'option_name' => 'whitelabel_footer_enabled',
+								'default'     => false,
+							),
+							'footer_text'       => array(
+								'option_name' => 'whitelabel_footer_text',
+								'default'     => '',
+							),
+							'doc_links_enabled' => array(
+								'option_name' => 'whitelabel_doc_links_enabled',
+								'default'     => false,
+							),
+						);
+
+						foreach ( $options_map as $key => $value ) {
+							if ( ! isset( $value['option_name'] ) || empty( $value['option_name'] ) ) {
+								continue;
+							}
+							$option_value = isset( $value['default'] ) ? $value['default'] : false;
+							if ( isset( $setting_data[ $key ] ) ) {
+								if ( is_string( $option_value ) ) {
+									$option_value = sanitize_text_field( wp_unslash( $setting_data[ $key ] ) );
+								} elseif ( is_bool( $option_value ) ) {
+									$option_value = filter_var( $setting_data[ $key ], FILTER_VALIDATE_BOOLEAN );
+								}
+							}
+
+							$this->set_option( $value['option_name'], $option_value );
+
+
+						}
+						// un silent message
+						$success = true;
+						break;
+					default:
+						$success = false;
+						break;
+				}
+				break;
+
+			// Function to setup analytics.
+			case 'analytics-setup':
+				$status = isset( $_REQUEST['status'] ) ? $_REQUEST['status'] : ''; // wpcs CSRF ok. already validated on process_ajax
+				switch ( $status ) {
+					case 'activate':
+						$success = WPMUDEV_Dashboard::$api->analytics_enable();
+						if ( $success ) {
+							$this->set_option( 'analytics_enabled', true );
+						}
+						break;
+					case 'deactivate':
+						$success = WPMUDEV_Dashboard::$api->analytics_disable();
+						if ( $success ) {
+							$this->set_option( 'analytics_enabled', false );
+						}
+						break;
+					case 'settings':
+						$option_value = isset( $_REQUEST['analytics_role'] ) && get_role( $_REQUEST['analytics_role'] ) ? $_REQUEST['analytics_role']
+							: 'administrator'; // wpcs CSRF ok. already validated on process_ajax
+						$this->set_option( 'analytics_role', sanitize_text_field( $option_value ) );
+
+						$metrics = isset( $_REQUEST['analytics_metrics'] ) && is_array( $_REQUEST['analytics_metrics'] ) ? $_REQUEST['analytics_metrics'] : array();
+						$this->set_option( 'analytics_metrics', $metrics );
+
+						$success = true;
+						break;
+					default:
+						$success = false;
+						break;
+				}
+				break;
+
+			// setup autoupdate dashboard
+			case 'autoupdate-dashboard' :
+				$status = isset( $_REQUEST['status'] ) ? $_REQUEST['status'] : ''; // wpcs CSRF ok. already validated on process_ajax
+				switch ( $status ) {
+					case 'settings':
+						$auto_update = isset( $_REQUEST['autoupdate_dashboard'] ) ? filter_var( $_REQUEST['autoupdate_dashboard'], FILTER_VALIDATE_BOOLEAN ) : false;
+						$this->set_option( 'autoupdate_dashboard', $auto_update );
+						$success = true;
+						break;
+					default:
+						$success = false;
+						break;
+				}
+
+				break;
+			default:
+				$success = false;
 				break;
 		}
 
@@ -564,7 +772,12 @@ class WPMUDEV_Dashboard_Site {
 	public function process_ajax() {
 		ob_start();
 
-		// Do nothing if function was called incorrectly.
+		/*
+		 * Do nothing if function was called incorrectly.
+		 *
+		 * Note: `hash` is a normal wp-nonce.
+		 *       We just use name="hash" instead of name="_wpnonce"
+		 */
 		if ( empty( $_REQUEST['action'] ) || empty( $_REQUEST['hash'] ) ) {
 			wp_send_json_error(
 				array( 'message' => __( 'Required field missing', 'wpmudev' ) )
@@ -572,19 +785,19 @@ class WPMUDEV_Dashboard_Site {
 		}
 
 		$action = str_replace( 'wdp-', '', $_REQUEST['action'] );
-		$nonce = $_REQUEST['hash'];
+		$nonce  = $_REQUEST['hash'];
 
 		// Do nothing if the nonce is invalid.
 		if ( ! wp_verify_nonce( $nonce, $action ) ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Invalid request', 'wpmudev' ) )
+				array( 'message' => __( 'Something went wrong, please refresh the page and try again.', 'wpmudev' ) )
 			);
 		}
 
-		// Do nothing if the user is not allowed to use the Dashboard.
-		if ( ! $this->allowed_user() ) {
+		// Do nothing if the user is not allowed to use the Dashboard. Exception for specific ajax actions
+		if ( ! in_array( $action, $this->ajax_allowed_bypasses ) && ! $this->allowed_user() ) {
 			wp_send_json_error(
-				array( 'message' => __( 'Not allowed', 'wpmudev' ) )
+				array( 'message' => __( 'Sorry, you are not allowed to do this.', 'wpmudev' ) )
 			);
 		}
 
@@ -592,7 +805,7 @@ class WPMUDEV_Dashboard_Site {
 
 		// When the _projess_ajax function did not send a response assume error.
 		wp_send_json_error(
-			array( 'message' => __( 'Request was not processed', 'wpmudev' ) )
+			array( 'message' => __( 'Unexpected action, we could not handle it.', 'wpmudev' ) )
 		);
 	}
 
@@ -631,23 +844,27 @@ class WPMUDEV_Dashboard_Site {
 	 *
 	 * @since  4.0.0
 	 * @internal
-	 * @param  string $action The action to execute.
+	 *
+	 * @param  string $action       The action to execute.
 	 * @param  bool   $allow_guests If true, then only public ajax-actions are
-	 *                processed (which use a special authentication method) but
-	 *                logged-in-only actions are skipped for security reasons.
+	 *                              processed (which use a special authentication method) but
+	 *                              logged-in-only actions are skipped for security reasons.
 	 */
 	protected function _process_ajax( $action, $allow_guests = false ) {
-		$pid = 0;
+		$pid        = 0;
+		$pids       = array();
 		$is_network = false;
 
 		if ( isset( $_REQUEST['pid'] ) ) {
-			$pid = intval( $_REQUEST['pid'] );
+			$pid = $_REQUEST['pid'];
+		} elseif ( isset( $_REQUEST['pids'] ) ) {
+			$pids = json_decode( stripslashes( $_REQUEST['pids'] ) );
 		}
 
 		// Those actions are ONLY available for logged-in admin users.
 		if ( ! $allow_guests ) {
 			if ( isset( $_REQUEST['is_network'] ) ) {
-				$is_network = (1 == intval( $_REQUEST['is_network'] ));
+				$is_network = ( 1 == intval( $_REQUEST['is_network'] ) );
 			}
 
 			switch ( $action ) {
@@ -658,16 +875,18 @@ class WPMUDEV_Dashboard_Site {
 					break;
 
 				case 'check-updates':
-					WPMUDEV_Dashboard::$site->set_option( 'refresh_remote_flag', 1 );
-					WPMUDEV_Dashboard::$site->set_option( 'refresh_local_flag', 1 );
 					WPMUDEV_Dashboard::$site->set_option( 'refresh_profile_flag', 1 );
-					WPMUDEV_Dashboard::$site->set_option( 'updates_available', false );
+					WPMUDEV_Dashboard::$api->refresh_projects_data();
+					WPMUDEV_Dashboard::$site->refresh_local_projects( 'remote' );
 					$this->send_json_success();
 					break;
 
 				case 'project-activate':
 					if ( $pid ) {
-						$local = $this->get_cached_projects( $pid );
+						$local      = $this->get_cached_projects( $pid );
+						if ( empty( $local ) ) {
+							$this->send_json_error( array( 'message' => __( 'Not installed' ) ) );
+						}
 						$other_pids = false;
 
 						if ( 'plugin' == $local['type'] ) {
@@ -675,7 +894,7 @@ class WPMUDEV_Dashboard_Site {
 						} elseif ( 'theme' == $local['type'] ) {
 							if ( $is_network ) {
 								// Allow theme network wide.
-								$allowed_themes = get_site_option( 'allowedthemes' );
+								$allowed_themes                   = get_site_option( 'allowedthemes' );
 								$allowed_themes[ $local['slug'] ] = true;
 								update_site_option( 'allowedthemes', $allowed_themes );
 							} else {
@@ -687,14 +906,17 @@ class WPMUDEV_Dashboard_Site {
 								switch_theme( $local['slug'] );
 							}
 						}
-
-						WPMUDEV_Dashboard::$ui->render_project( $pid, $other_pids );
+						$this->clear_local_file_cache();
+						WPMUDEV_Dashboard::$ui->render_project( $pid, $other_pids, false, true );
 					}
 					break;
 
 				case 'project-deactivate':
 					if ( $pid ) {
-						$local = $this->get_cached_projects( $pid );
+						$local      = $this->get_cached_projects( $pid );
+						if ( empty( $local ) ) {
+							$this->send_json_error( array( 'message' => __( 'Not installed' ) ) );
+						}
 
 						if ( 'plugin' == $local['type'] ) {
 							deactivate_plugins( $local['filename'], '', $is_network );
@@ -707,29 +929,23 @@ class WPMUDEV_Dashboard_Site {
 							}
 						}
 
-						WPMUDEV_Dashboard::$ui->render_project( $pid );
+						$this->clear_local_file_cache();
+						WPMUDEV_Dashboard::$ui->render_project( $pid, false, false, true );
 					}
 					break;
 
 				case 'project-install':
 					if ( $pid ) {
-						if ( $this->install_project( $pid ) ) {
-							$local = $this->get_cached_projects( $pid );
+						$local = $this->get_cached_projects( $pid );
+						if ( ! empty( $local ) ) {
+							$this->send_json_error( array( 'message' => __( 'Already installed' ) ) );
+						}
 
-							if ( ! $is_network && 'plugin' == $local['type'] ) {
-								activate_plugins( $local['filename'], '', false );
-							}
-
+						if ( $this->maybe_replace_free_with_pro( $pid ) ) {
 							WPMUDEV_Dashboard::$ui->render_project(
 								$pid,
 								false,
 								'popup-after-install'
-							);
-						} else {
-							WPMUDEV_Dashboard::$ui->render_project(
-								$pid,
-								false,
-								'popup-after-install-failed'
 							);
 						}
 					}
@@ -737,13 +953,13 @@ class WPMUDEV_Dashboard_Site {
 
 				case 'project-install-upfront':
 					if ( ! $this->is_upfront_installed() ) {
-						$error = false;
 						$id_upfront = $this->id_upfront;
 
-						$this->install_project( $id_upfront, $error );
+						$success = WPMUDEV_Dashboard::$upgrader->install( $id_upfront );
 
-						if ( $error ) {
-							wp_send_json_error( array( 'message' => $error ) );
+						if ( ! $success ) {
+							$err = WPMUDEV_Dashboard::$upgrader->get_error();
+							wp_send_json_error( $err );
 						}
 					}
 
@@ -759,9 +975,14 @@ class WPMUDEV_Dashboard_Site {
 
 				case 'project-update':
 					if ( $pid ) {
-						// Will `die()` if update fails.
-						$this->update_project( $pid );
+						$success = WPMUDEV_Dashboard::$upgrader->upgrade( $pid );
 
+						if ( ! $success ) {
+							$err = WPMUDEV_Dashboard::$upgrader->get_error();
+							$this->send_json_error( $err );
+						}
+
+						$this->clear_local_file_cache();
 						WPMUDEV_Dashboard::$ui->render_project( $pid );
 					}
 					break;
@@ -772,13 +993,14 @@ class WPMUDEV_Dashboard_Site {
 						$users = $this->get_potential_users( $_REQUEST['q'] );
 						foreach ( $users as $user ) {
 							$items[] = array(
-								'id' => $user->id,
-								'thumb' => $user->avatar,
-								'label' => sprintf(
-									'<span class="name title">%1$s</span> <span class="email">%2$s</span>',
+								'id'      => $user->id,
+								'thumb'   => $user->avatar,
+								'label'   => sprintf(
+									'<span class="name title">%1$s</span> <span class="email">(%2$s)</span>',
 									$user->name,
 									$user->email
 								),
+								'display' => $user->name . ' (' . $user->email . ')',
 							);
 						}
 					}
@@ -787,19 +1009,19 @@ class WPMUDEV_Dashboard_Site {
 
 				case 'projectsearch':
 					$items = array();
-					$urls = WPMUDEV_Dashboard::$ui->page_urls;
+					$urls  = WPMUDEV_Dashboard::$ui->page_urls;
 					if ( ! empty( $_REQUEST['q'] ) ) {
 						$projects = $this->find_projects_by_name( $_REQUEST['q'] );
 						foreach ( $projects as $item ) {
 							if ( 'theme' == $item->type ) {
-								$url = $urls->themes_url;
+								$url  = $urls->themes_url;
 								$icon = '<i class="dev-icon dev-icon-theme"></i> ';
 							} elseif ( 'plugin' == $item->type ) {
-								$url = $urls->plugins_url;
+								$url  = $urls->plugins_url;
 								$icon = '<i class="dev-icon dev-icon-plugin"></i> ';
 							}
 							$items[] = array(
-								'id' => $item->id,
+								'id'    => $item->id,
 								'thumb' => $item->logo,
 								'label' => sprintf(
 									'<a href="%3$s"><span class="name title">%1$s</span> <span class="desc">%2$s</span></a>',
@@ -817,15 +1039,15 @@ class WPMUDEV_Dashboard_Site {
 				case 'save-setting-bool':
 				case 'save-setting-int':
 					if ( ! empty( $_REQUEST['name'] ) && isset( $_REQUEST['value'] ) ) {
-						$name = sanitize_html_class( $_REQUEST['name'] );
+						$name  = sanitize_html_class( $_REQUEST['name'] );
 						$value = $_REQUEST['value'];
 
 						switch ( $action ) {
 							case 'save-setting-bool':
 								if ( 'true' == $value
-									|| '1' == $value
-									|| 'on' == $value
-									|| 'yes' == $value
+								     || '1' == $value
+								     || 'on' == $value
+								     || 'yes' == $value
 								) {
 									$value = true;
 								} else {
@@ -835,6 +1057,8 @@ class WPMUDEV_Dashboard_Site {
 
 							case 'save-setting-int':
 								$value = intval( $value );
+								break;
+							default:
 								break;
 						}
 
@@ -852,6 +1076,98 @@ class WPMUDEV_Dashboard_Site {
 
 				case 'changelog':
 					WPMUDEV_Dashboard::$ui->wp_popup_changelog( $pid );
+					break;
+
+				case 'credentials':
+					// Remember credentials for FTP update/installation, for 15 min.
+					if ( WPMUDEV_Dashboard::$upgrader->remember_credentials() ) {
+						$this->send_json_success();
+					} else {
+						$this->send_json_error();
+					}
+					break;
+
+				case 'analytics':
+					if ( ! $this->user_can_analytics() ) {
+						$this->send_json_error( array( 'message' => __( 'Unauthorized', 'wpmudev' ) ) );
+					}
+
+					$data = WPMUDEV_Dashboard::$api->analytics_stats_single( $_REQUEST['range'], $_REQUEST['type'], $_REQUEST['filter'] );
+					if ( $data ) {
+						$this->send_json_success( $data );
+					} else {
+						$this->send_json_error( array( 'message' => __( 'There was an API error, please try again.', 'wpmudev' ) ) );
+					}
+					break;
+
+				case 'project-delete':
+					if ( $pid ) {
+						if ( WPMUDEV_Dashboard::$upgrader->delete_plugin( $pid ) ) {
+							$this->clear_local_file_cache();
+
+							WPMUDEV_Dashboard::$ui->render_project(
+								$pid,
+								false
+							);
+						} else {
+							$err = WPMUDEV_Dashboard::$upgrader->get_error();
+							$this->send_json_error( $err );
+						}
+					}
+					break;
+
+				case 'hub-sync':
+					if ( ! empty( $_REQUEST['key'] ) ) {
+						$key = trim( $_REQUEST['key'] );
+						WPMUDEV_Dashboard::$api->set_key( $key );
+						$result = WPMUDEV_Dashboard::$api->hub_sync( false, true );
+						if ( ! $result || empty( $result['membership'] ) ) {
+
+							WPMUDEV_Dashboard::$api->set_key( '' );
+							if ( false === $result ) {
+								$this->send_json_error(
+									array(
+										'redirect' => add_query_arg(
+											array( 'connection_error' => '1' ),
+											WPMUDEV_Dashboard::$ui->page_urls->dashboard_url
+										),
+									)
+								);
+							}
+
+							$this->send_json_error(
+								array(
+									'redirect' => add_query_arg(
+										array( 'invalid_key' => '1' ),
+										WPMUDEV_Dashboard::$ui->page_urls->dashboard_url
+									),
+								)
+							);
+
+
+						} else {
+							// valid key
+							global $current_user;
+							WPMUDEV_Dashboard::$site->set_option( 'limit_to_user', $current_user->ID );
+							WPMUDEV_Dashboard::$api->refresh_profile();
+						}
+						$this->send_json_success(
+							array(
+								'redirect' => add_query_arg(
+									array( 'view' => 'sync-plugins' ),
+									WPMUDEV_Dashboard::$ui->page_urls->dashboard_url
+								),
+							)
+						);
+					}
+					break;
+
+				case 'project-upgrade-free':
+					if ( $pid ) {
+						if ( $this->maybe_replace_free_with_pro( $pid ) ) {
+							$this->send_json_success();
+						}
+					}
 					break;
 
 				default:
@@ -879,55 +1195,6 @@ class WPMUDEV_Dashboard_Site {
 					WPMUDEV_Dashboard::$api->authenticate_remote_access();
 					break;
 
-				case 'wdpupdate':
-					/*
-					 * Required HEADER values:
-					 * - wdp-auth
-					 * Required POST params:
-					 * - pid
-					 */
-
-					// Will `die()` if authentication fails.
-					$args = array( 'action', 'pid' ); // Authentication: $action . $pid.
-					WPMUDEV_Dashboard::$api->validate_hash( $args );
-
-					// Will `die()` if update fails.
-					WPMUDEV_Dashboard::$site->update_project( $pid );
-
-					$this->send_json_success();
-					break;
-
-				case 'wdpreport':
-					/*
-					 * Required HEADER values:
-					 * - wdp-auth
-					 */
-
-					// Will `die()` if authentication fails.
-					$args = array( 'action' ); // Authentication: $action.
-					WPMUDEV_Dashboard::$api->validate_hash( $args );
-
-					// Simply refresh the membership details.
-					WPMUDEV_Dashboard::$api->refresh_membership_data();
-
-					$this->send_json_success();
-					break;
-
-				case 'wdplogout':
-					/*
-					 * Required HEADER values:
-					 * - wdp-auth
-					 */
-
-					// Will `die()` if authentication fails.
-					$args = array( 'action' ); // Authentication: $action.
-					WPMUDEV_Dashboard::$api->validate_hash( $args );
-
-					$this->logout( false );
-
-					$this->send_json_success();
-					break;
-
 				default:
 					$this->send_json_error(
 						array(
@@ -943,13 +1210,50 @@ class WPMUDEV_Dashboard_Site {
 	}
 
 	/**
+	 * Used by the Getting started wizard on WPMU DEV to programatically login to the dashboard
+	 *
+	 * @param $_REQUEST ['apikey']
+	 */
+	public function ajax_connect() {
+
+		//check permissions
+		if ( ! current_user_can( 'manage_network_options' ) ) {
+			$this->send_json_error( 'No permissions' );
+		}
+
+		WPMUDEV_Dashboard::$api->set_key( trim( $_REQUEST['apikey'] ) );
+		$result = WPMUDEV_Dashboard::$api->hub_sync( false, true );
+		if ( ! $result || empty( $result['membership'] ) ) {
+			// Don't logout at this point!
+			WPMUDEV_Dashboard::$api->set_key( '' );
+			if ( false === $result ) {
+				$this->send_json_error( WPMUDEV_Dashboard::$api->api_error );
+			} else {
+				$this->send_json_error( __( 'Your API Key was invalid. Please try again.', 'wpmudev' ) );
+			}
+		} else {
+			// You did it! Login was successful :)
+			// The current user is our new hero-user with Dashboard access.
+			WPMUDEV_Dashboard::$site->set_option( 'limit_to_user', get_current_user_id() );
+			WPMUDEV_Dashboard::$api->refresh_profile();
+			// User is logged in: First redirect is done.
+			WPMUDEV_Dashboard::$site->set_option( 'redirected_v4', 1 );
+
+			$this->send_json_success();
+		}
+	}
+
+	/**
 	 * Clear all output buffers and send an JSON reponse to an Ajax request.
 	 *
 	 * @since  4.0.0
+	 *
 	 * @param  mixed $data Optional data to return to the Ajax request.
 	 */
 	public function send_json_success( $data = null ) {
-		while ( ob_get_level() ) { ob_get_clean(); }
+		while ( ob_get_level() ) {
+			ob_get_clean();
+		}
 
 		wp_send_json_success( $data );
 	}
@@ -958,10 +1262,13 @@ class WPMUDEV_Dashboard_Site {
 	 * Clear all output buffers and send an JSON reponse to an Ajax request.
 	 *
 	 * @since  4.0.0
+	 *
 	 * @param  mixed $data Optional data to return to the Ajax request.
 	 */
 	public function send_json_error( $data = null ) {
-		while ( ob_get_level() ) { ob_get_clean(); }
+		while ( ob_get_level() ) {
+			ob_get_clean();
+		}
 
 		wp_send_json_error( $data );
 	}
@@ -981,8 +1288,10 @@ class WPMUDEV_Dashboard_Site {
 	 * Use this function instead of direct access via get_site_option()
 	 *
 	 * @since  4.0.0
-	 * @param  string $name The option name.
+	 *
+	 * @param  string $name   The option name.
 	 * @param  bool   $prefix Optional. Set to false to not prefix the name.
+	 *
 	 * @return mixed The option value.
 	 */
 	public function get_option( $name, $prefix = true ) {
@@ -992,12 +1301,7 @@ class WPMUDEV_Dashboard_Site {
 			$key = $name;
 		}
 
-		if ( ! $prefix || ! isset( $this->option_cache[ $key ] ) ) {
-			$this->option_cache[ $key ] = get_site_option( $key );
-			$this->option_hash[ $key ] = md5( json_encode( $this->option_cache[ $key ] ) );
-		}
-
-		return $this->option_cache[ $key ];
+		return get_site_option( $key );
 	}
 
 	/**
@@ -1007,26 +1311,13 @@ class WPMUDEV_Dashboard_Site {
 	 * Use this function instead of direct access via update_site_option()
 	 *
 	 * @since  4.0.0
-	 * @param  string $name The option name.
+	 *
+	 * @param  string $name  The option name.
 	 * @param  mixed  $value The new option value.
 	 */
 	public function set_option( $name, $value ) {
 		$key = 'wdp_un_' . $name;
-		$new_hash = md5( json_encode( $value ) );
-
-		// Don't update if the value did not change.
-		if ( isset( $this->option_hash[ $key ] ) ) {
-			if ( $new_hash == $this->option_hash[ $key ] ) { return; }
-		}
-
-		// Fix to prevent WordPress hashing PHP objects.
-		update_site_option( $key, '' );
-
-		$this->option_cache[ $key ] = $value;
-		$this->option_hash[ $key ] = $new_hash;
-		if ( $value ) {
-			update_site_option( $key, $value );
-		}
+		update_site_option( $key, $value );
 	}
 
 	/**
@@ -1038,7 +1329,8 @@ class WPMUDEV_Dashboard_Site {
 	 * Use this function instead of direct access via add_site_option()
 	 *
 	 * @since  4.0.0
-	 * @param  string $name The option name.
+	 *
+	 * @param  string $name  The option name.
 	 * @param  mixed  $value The new option value.
 	 */
 	public function add_option( $name, $value ) {
@@ -1060,8 +1352,10 @@ class WPMUDEV_Dashboard_Site {
 	 * Use this function instead of direct access via get_site_transient()
 	 *
 	 * @since  4.0.0
-	 * @param  string $name The transient name.
+	 *
+	 * @param  string $name   The transient name.
 	 * @param  bool   $prefix Optional. Set to false to not prefix the name.
+	 *
 	 * @return mixed The transient value.
 	 */
 	public function get_transient( $name, $prefix = true ) {
@@ -1073,9 +1367,8 @@ class WPMUDEV_Dashboard_Site {
 
 		// Transient name cannot be longer than 45 characters.
 		$key = substr( $key, 0, 45 );
-		$value = get_site_transient( $key );
 
-		return $value;
+		return get_site_transient( $key );
 	}
 
 	/**
@@ -1085,8 +1378,9 @@ class WPMUDEV_Dashboard_Site {
 	 * Use this function instead of direct access via update_site_option()
 	 *
 	 * @since  4.0.0
-	 * @param  string $name The transient name.
-	 * @param  mixed  $value The new transient value.
+	 *
+	 * @param  string $name       The transient name.
+	 * @param  mixed  $value      The new transient value.
 	 * @param  int    $expiration Time until expiration. Default: No expiration.
 	 */
 	public function set_transient( $name, $value, $expiration = 0 ) {
@@ -1094,9 +1388,9 @@ class WPMUDEV_Dashboard_Site {
 		$key = substr( 'wdp_un_' . $name, 0, 45 );
 
 		// Fix to prevent WP from hashing PHP objects.
-		set_site_transient( $key, '', $expiration );
+		delete_site_transient( $key );
 
-		if ( $value ) {
+		if ( null !== $value ) {
 			set_site_transient( $key, $value, $expiration );
 		}
 	}
@@ -1105,7 +1399,9 @@ class WPMUDEV_Dashboard_Site {
 	 * Returns a usermeta value of the current user.
 	 *
 	 * @since  4.0.0
+	 *
 	 * @param  string $name The meta-key.
+	 *
 	 * @return mixed The meta-value.
 	 */
 	public function get_usermeta( $name ) {
@@ -1120,7 +1416,8 @@ class WPMUDEV_Dashboard_Site {
 	 * Updates a usermeta value of the current user.
 	 *
 	 * @since  4.0.0
-	 * @param  string $name The transient name.
+	 *
+	 * @param  string $name  The transient name.
 	 * @param  mixed  $value The new transient value.
 	 */
 	public function set_usermeta( $name, $value ) {
@@ -1135,15 +1432,21 @@ class WPMUDEV_Dashboard_Site {
 	 * After logout, the user is redirected to the login page.
 	 *
 	 * @since  4.0.5
+	 *
 	 * @param  bool $redirect If set to false, the user will not be redirected
-	 *              to the login page. Used for remote logout via ajax handler.
+	 *                        to the login page. Used for remote logout via ajax handler.
 	 */
 	public function logout( $redirect = true ) {
 		// Prevent infinite loops...
-		if ( ! WPMUDEV_Dashboard::$api->has_key() ) { return false; }
+		if ( ! WPMUDEV_Dashboard::$api->has_key() ) {
+			return false;
+		}
 
+		WPMUDEV_Dashboard::$api->revoke_remote_access();
+		WPMUDEV_Dashboard::$api->analytics_disable();
 		$this->init_options( 'reset' );
 		WPMUDEV_Dashboard::$api->set_key( '' );
+		WPMUDEV_Dashboard::$api->hub_sync( false, true ); // force a sync so that site is removed from user's hub.
 
 		if ( $redirect ) {
 			// Directly redirect to login page.
@@ -1157,46 +1460,58 @@ class WPMUDEV_Dashboard_Site {
 	 * WordPress timezone.
 	 *
 	 * @since  4.0.0
+	 *
 	 * @param  string|int $time Either a date-time expression or timestamp.
+	 *
 	 * @return int The timestamp in local WordPress timezone.
 	 */
 	public function to_localtime( $time ) {
 		if ( is_numeric( $time ) ) {
-			$timestamp = intval( $time );
+			$gmt_timestamp = intval( $time );
 		} else {
-			$timestamp = strtotime( $time );
+			$gmt_timestamp = strtotime( $time );
 		}
 
-		if ( ! $time ) { return 0; }
+		if ( ! $time ) {
+			return 0;
+		}
 
-		// In Multisite networks this option is from the main blog.
-		$offset = intval( get_option( 'gmt_offset' ) ) * 60 * 60;
-		$timestamp += $offset;
+		$string = date( 'Y-m-d H:i:s', $gmt_timestamp );
+		$tz     = get_option( 'timezone_string' ); // In Multisite networks this option is from the main blog.
 
-		return $timestamp;
+		if ( $tz ) {
+			$datetime = date_create( $string, new DateTimeZone( 'UTC' ) );
+			if ( ! $datetime ) {
+				return 0;
+			}
+			$datetime->setTimezone( new DateTimeZone( $tz ) );
+			$localtime = strtotime( $datetime->format( 'Y-m-d H:i:s' ) );
+		} else {
+			if ( ! preg_match( '#([0-9]{1,4})-([0-9]{1,2})-([0-9]{1,2}) ([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2})#', $string, $matches ) ) {
+				return 0;
+			}
+
+			$gmt_offset = get_option( 'gmt_offset' ); // In Multisite networks this option is from the main blog.
+
+			$string_time = gmmktime( $matches[4], $matches[5], $matches[6], $matches[2], $matches[3], $matches[1] );
+			$localtime   = $string_time + $gmt_offset * HOUR_IN_SECONDS;
+		}
+
+		return $localtime;
 	}
 
 	/**
 	 * The proper way to get the array of locally installed products from cache.
 	 *
 	 * @since  1.0.0
+	 *
 	 * @param  int $project_id Optional. If set then a single project array
-	 *             will be returned. Default: Return full project list.
+	 *                         will be returned. Default: Return full project list.
+	 *
 	 * @return array
 	 */
 	public function get_cached_projects( $project_id = null ) {
-		$projects = false;
-
-		if ( $this->get_option( 'refresh_local_flag' ) ) {
-			$this->flush_fs_cache = true;
-		}
-
-		if ( $this->flush_fs_cache ) {
-			$this->set_transient( 'local_projects', false );
-			$projects = false;
-		} else {
-			$projects = $this->get_transient( 'local_projects' );
-		}
+		$projects = $this->get_transient( 'local_projects' );
 
 		if ( ! $projects || ! is_array( $projects ) ) {
 			// Set param to true to avoid infinite loop.
@@ -1208,9 +1523,6 @@ class WPMUDEV_Dashboard_Site {
 					$projects,
 					5 * MINUTE_IN_SECONDS
 				);
-
-				// Use cached version on next call.
-				$this->set_option( 'refresh_local_flag', 0 );
 			}
 		}
 
@@ -1223,6 +1535,7 @@ class WPMUDEV_Dashboard_Site {
 		} else {
 			$res = $projects;
 		}
+
 		return $res;
 	}
 
@@ -1230,142 +1543,156 @@ class WPMUDEV_Dashboard_Site {
 	 * Returns lots of details about the specified project.
 	 *
 	 * @since  4.0.0
-	 * @param  int  $pid The Project ID.
+	 *
+	 * @param  int  $pid        The Project ID.
 	 * @param  bool $fetch_full Optional. If true, then even potentially
-	 *              time-consuming preparation is done.
-	 *              e.g. load changelog via API.
+	 *                          time-consuming preparation is done.
+	 *                          e.g. load changelog via API.
+	 *
 	 * @return object Details about the project.
 	 */
 	public function get_project_infos( $pid, $fetch_full = false ) {
-		static $ProjectInfos = array();
-		$pid = intval( $pid );
-		$is_network_admin = is_multisite() && (is_network_admin() || ! empty( $_REQUEST['is_network'] ));
+		$pid              = intval( $pid );
+		$is_network_admin = is_multisite(); // If multisite we only ever do things in network admin
+		$urls             = WPMUDEV_Dashboard::$ui->page_urls;
 
-		if ( $this->flush_info_cache ) {
-			$ProjectInfos = array();
+		if ( ! is_array( self::$_cache_projectinfos ) ) {
+			self::$_cache_projectinfos = array();
 		}
 
-		if ( ! isset( $ProjectInfos[ $pid ] ) ) {
-			$this->flush_info_cache = false;
+		//build data if it's not cached or we need changelog and the changelog is missing from cache
+		if ( ! isset( self::$_cache_projectinfos[ $pid ] ) || ( $fetch_full && ! count( self::$_cache_projectinfos[ $pid ]->changelog ) ) ) {
 			$res = (object) array(
-				'pid' => $pid,
-				'type' => '', // Possible: 'plugin' or 'theme'.
-				'special' => false, // Possible: false, 'dropin' or 'muplugin'.
-				'name' => '', // Project name.
-				'path' => '', // Full path to main project file.
-				'filename' => '', // Filename, relative to plugins/themes dir.
-				'slug' => '', // Slug used for updates.
-				'version_latest' => '0.0',
-				'version_installed' => '0.0',
-				'has_update' => false, // Is new version available?
-				'can_update' => false, // User has permission to update?
-				'can_activate' => false, // User has permission to activate/deactivate?
-				'can_autoupdate' => false, // If plugin should auto-update?
-				'is_compatible' => true, // Site has all requirements to install project?
+				'pid'                 => $pid,
+				'type'                => '', // Possible: 'plugin' or 'theme'.
+				'special'             => false, // Possible: false, 'dropin' or 'muplugin'.
+				'name'                => '', // Project name.
+				'path'                => '', // Full path to main project file.
+				'filename'            => '', // Filename, relative to plugins/themes dir.
+				'slug'                => '', // Slug used for updates.
+				'version_latest'      => '0.0',
+				'version_installed'   => '0.0',
+				'has_update'          => false, // Is new version available?
+				'can_update'          => false, // User has permission to update?
+				'can_activate'        => false, // User has permission to activate/deactivate?
+				'can_autoupdate'      => false, // If plugin should auto-update?
+				'is_compatible'       => true, // Site has all requirements to install project?
 				'incompatible_reason' => '', // If is_compatible is false.
-				'need_upfront' => false, // Only used by themes.
-				'is_installed' => false, // Installed on current site?
-				'is_active' => false, // WordPress state, i.e. plugin activated?
-				'is_hidden' => false, // Projects can be hidden via API.
-				'is_licensed' => false, // User has license to use this project?
-				'downloads' => 0,
-				'popularity' => 0,
-				'release_stamp' => 0,
-				'update_stamp' => 0,
-				'info' => '',
-				'url' => (object) array(
-					'instructions' => '',
-					'config' => '',
-					'activate' => '',
-					'deactivate' => '',
-					'install' => '',
-					'update' => '',
-					'download' => '',
-					'website' => '',
-					'thumbnail' => '',
-					'video' => '',
+				'need_upfront'        => false, // Only used by themes.
+				'is_installed'        => false, // Installed on current site?
+				'is_active'           => false, // WordPress state, i.e. plugin activated?
+				'is_hidden'           => false, // Projects can be hidden via API.
+				'is_licensed'         => false, // User has license to use this project?
+				'default_order'       => 0,
+				'downloads'           => 0,
+				'popularity'          => 0,
+				'release_stamp'       => 0,
+				'update_stamp'        => 0,
+				'info'                => '',
+				'url'                 => (object) array(
+					'instructions'     => '',
+					'config'           => '',
+					'activate'         => '',
+					'deactivate'       => '',
+					'install'          => '',
+					'update'           => '',
+					'download'         => '',
+					'website'          => '',
+					'thumbnail'        => '',
+					'thumbnail_square' => '',
+					'video'            => '',
+					'infos'            => '',
 				),
-				'changelog' => array(),
-				'features' => array(),
-				'tags' => array(),
-				'screenshots' => array(),
+				'changelog'           => array(),
+				'features'            => array(),
+				'tags'                => array(),
+				'screenshots'         => array(),
+				'free_version_slug'   => '',
 			);
 
 			$remote = WPMUDEV_Dashboard::$api->get_project_data( $pid );
 			if ( empty( $remote ) ) {
-				$ProjectInfos[ $pid ] = false;
+				self::$_cache_projectinfos[ $pid ] = false;
+
 				return false;
 			}
-			$local = WPMUDEV_Dashboard::$site->get_cached_projects( $pid );
+			$local           = WPMUDEV_Dashboard::$site->get_cached_projects( $pid );
 			$system_projects = WPMUDEV_Dashboard::$site->get_system_projects();
 
 			// General details.
-			$res->type = ('theme' == $remote['type'] ? 'theme' : 'plugin');
-			$res->name = $remote['name'];
-			$res->info = strip_tags( $remote['short_description'] );
+			$res->type           = ( 'theme' == $remote['type'] ? 'theme' : 'plugin' );
+			$res->name           = $remote['name'];
+			$res->info           = strip_tags( $remote['short_description'] );
 			$res->version_latest = $remote['version'];
-			$res->features = $remote['features'];
-			$res->downloads = intval( $remote['downloads'] );
-			$res->popularity = intval( $remote['popularity'] );
-			$res->release_stamp = intval( $remote['released'] );
-			$res->update_stamp = intval( $remote['updated'] );
+			$res->features       = $remote['features'];
+			$res->default_order  = isset( $remote['_order'] ) ? intval( $remote['_order'] ) : 0;
+			$res->downloads      = intval( $remote['downloads'] );
+			$res->popularity     = intval( $remote['popularity'] );
+			$res->release_stamp  = intval( $remote['released'] );
+			$res->update_stamp   = intval( $remote['updated'] );
 
 			// Project tags.
-			if ( 'plugin' == $res->type ) {
+			if ( 'plugin' === $res->type ) {
 				$tags = WPMUDEV_Dashboard::$ui->tags_data( 'plugin' );
 			} else {
 				$tags = WPMUDEV_Dashboard::$ui->tags_data( 'theme' );
 			}
 			foreach ( $tags as $tid => $tag ) {
-				if ( ! in_array( $pid, $tag['pids'] ) ) { continue; }
+				if ( ! in_array( $pid, $tag['pids'] ) ) {
+					continue;
+				}
 				$res->tags[ $tid ] = $tag['name'];
 			}
 
 			// Status details.
-			$res->can_update = WPMUDEV_Dashboard::$site->user_can_install( $pid );
-			$res->is_licensed = WPMUDEV_Dashboard::$site->user_can_install( $pid, true );
+			$res->can_update  = WPMUDEV_Dashboard::$upgrader->user_can_install( $pid );
+			$res->is_licensed = WPMUDEV_Dashboard::$upgrader->user_can_install( $pid, true );
 
 			if ( 'theme' == $res->type ) {
 				$res->need_upfront = $this->is_upfront_theme( $pid );
+			} elseif ( $this->id_upfront_builder == $pid ) { //the upfront builder plugin requires Upfront theme
+				$res->need_upfront = true;
 			}
 
-			if ( $res->is_licensed ) {
-				// Okay, this project is licensed.
-				$res->is_installed = WPMUDEV_Dashboard::$site->is_project_installed( $pid );
-				$res->is_compatible = WPMUDEV_Dashboard::$site->is_project_compatible( $pid, $incompatible_reason );
-				if ( WPMUDEV_Dashboard::$api->has_key() ) {
-					$res->can_autoupdate = ('1' == $remote['autoupdate']);
+			$res->is_installed = WPMUDEV_Dashboard::$upgrader->is_project_installed( $pid );
+
+			$res->can_autoupdate = ( '1' == $remote['autoupdate'] ); //this has nothing to do with permissions, just project capability
+			$res->is_compatible  = WPMUDEV_Dashboard::$upgrader->is_project_compatible( $pid, $incompatible_reason );
+
+			// Plugin can be active, even if not licensed:
+			// E.g. it was installed and then the admin logged out from WPMU DEV
+			// Dashboard, or the API-Key was changed from the Hub, ...
+			if ( $res->is_installed ) {
+				if ( ! empty( $local['name'] ) ) {
+					$res->name = $local['name'];
 				}
-				if ( $res->is_installed ) {
-					if ( ! empty( $local['name'] ) ) { $res->name = $local['name']; }
-					if ( 'muplugin' == $local['type'] ) {
-						$res->special = $local['type'];
-					} elseif ( 'dropin' == $local['type'] ) {
-						$res->special = $local['type'];
+				if ( 'muplugin' == $local['type'] ) {
+					$res->special = $local['type'];
+				} elseif ( 'dropin' == $local['type'] ) {
+					$res->special = $local['type'];
+				}
+				$res->path              = $local['path'];
+				$res->filename          = $local['filename'];
+				$res->slug              = $local['slug'];
+				$res->version_installed = $local['version'];
+				$res->has_update        = WPMUDEV_Dashboard::$upgrader->is_update_available( $pid );
+
+				if ( 'plugin' == $res->type ) {
+					if ( ! function_exists( 'is_plugin_active' ) ) {
+						include_once ABSPATH . 'wp-admin/includes/plugin.php';
 					}
-					$res->path = $local['path'];
-					$res->filename = $local['filename'];
-					$res->slug = $local['slug'];
-					$res->version_installed = $local['version'];
-					$res->has_update = WPMUDEV_Dashboard::$site->is_update_available( $pid );
 
-					if ( 'plugin' == $res->type ) {
-						if ( ! function_exists( 'is_plugin_active' ) ) {
-							include_once ABSPATH . 'wp-admin/includes/plugin.php' ;
-						}
-
-						if ( $is_network_admin ) {
-							$res->is_active = is_plugin_active_for_network( $res->filename );
-						} else {
-							$res->is_active = is_plugin_active( $res->filename );
-						}
-					} elseif ( 'theme' == $res->type ) {
-						if ( $is_network_admin ) {
-							$allowed_themes = get_site_option( 'allowedthemes' );
-							$res->is_active = ! empty( $allowed_themes[ $res->slug ] );
-						} else {
-							$res->is_active = ($res->slug == get_option( 'stylesheet' ) );
-						}
+					if ( $is_network_admin ) {
+						$res->is_active = is_plugin_active_for_network( $res->filename );
+					} else {
+						$res->is_active = is_plugin_active( $res->filename );
+					}
+				} elseif ( 'theme' == $res->type ) {
+					if ( $is_network_admin ) {
+						$allowed_themes = get_site_option( 'allowedthemes' );
+						$res->is_active = ! empty( $allowed_themes[ $res->slug ] );
+					} else {
+						$res->is_active = ( $res->slug == get_option( 'stylesheet' ) );
 					}
 				}
 			}
@@ -1406,7 +1733,12 @@ class WPMUDEV_Dashboard_Site {
 			} else {
 				$res->url->thumbnail = esc_url( $remote['thumbnail'] );
 			}
-			$res->url->video = esc_url( $remote['video'] );
+			if ( ! empty( $remote['thumbnail_square'] ) ) {
+				$res->url->thumbnail_square = esc_url( $remote['thumbnail_square'] );
+			} else {
+				$res->url->thumbnail_square = esc_url( $remote['thumbnail'] );
+			}
+			$res->url->video        = esc_url( $remote['video'] );
 			$res->url->instructions = WPMUDEV_Dashboard::$api->rest_url( 'usage/' . $pid );
 
 			if ( $res->is_active ) {
@@ -1419,11 +1751,11 @@ class WPMUDEV_Dashboard_Site {
 				}
 			}
 
-			$res->url->install = WPMUDEV_Dashboard::$site->auto_install_url( $pid );
+			$res->url->install  = WPMUDEV_Dashboard::$upgrader->auto_install_url( $pid );
 			$res->url->download = esc_url( $remote['url'] );
 			if ( ! $res->special ) {
 				// I.e. only if plugin is no dropin/muplugin.
-				$res->url->update = WPMUDEV_Dashboard::$site->auto_update_url( $pid );
+				$res->url->update = WPMUDEV_Dashboard::$upgrader->auto_update_url( $pid );
 			}
 			if ( ! $res->is_compatible ) {
 				switch ( $incompatible_reason ) {
@@ -1440,20 +1772,28 @@ class WPMUDEV_Dashboard_Site {
 						break;
 				}
 			}
+
+			// When not logged in, the project-ID is passed as URL param!
+			$pid_sep = WPMUDEV_Dashboard::$api->has_key() ? '#' : '&';
+
 			if ( 'plugin' == $res->type ) {
+				$res->url->infos = $urls->plugins_url . $pid_sep . 'pid=' . $pid;
+
 				$res->url->deactivate = 'plugins.php?action=deactivate&plugin=' . urlencode( $res->filename );
-				$res->url->activate = 'plugins.php?action=activate&plugin=' . urlencode( $res->filename );
+				$res->url->activate   = 'plugins.php?action=activate&plugin=' . urlencode( $res->filename );
 
 				if ( $is_network_admin ) {
 					$res->url->deactivate = network_admin_url( $res->url->deactivate );
-					$res->url->activate = network_admin_url( $res->url->activate );
+					$res->url->activate   = network_admin_url( $res->url->activate );
 				} else {
 					$res->url->deactivate = admin_url( $res->url->deactivate );
-					$res->url->activate = admin_url( $res->url->activate );
+					$res->url->activate   = admin_url( $res->url->activate );
 				}
 				$res->url->deactivate = wp_nonce_url( $res->url->deactivate, 'deactivate-plugin_' . $res->filename );
-				$res->url->activate = wp_nonce_url( $res->url->activate, 'activate-plugin_' . $res->filename );
+				$res->url->activate   = wp_nonce_url( $res->url->activate, 'activate-plugin_' . $res->filename );
 			} elseif ( 'theme' == $res->type ) {
+				$res->url->infos = $urls->themes_url . $pid_sep . 'pid=' . $pid;
+
 				if ( $is_network_admin ) {
 					/*
 					 * In Network-Admin following theme-actions are disabled:
@@ -1461,7 +1801,7 @@ class WPMUDEV_Dashboard_Site {
 					 * - Configure
 					 */
 					$res->url->activate = false;
-					$res->url->config = false;
+					$res->url->config   = false;
 				} else {
 					$res->url->activate = wp_nonce_url(
 						'themes.php?action=activate&template=' . urlencode( $res->filename ) . '&stylesheet=' . urlencode( $res->filename ),
@@ -1470,12 +1810,14 @@ class WPMUDEV_Dashboard_Site {
 					if ( $res->need_upfront ) {
 						$res->url->config = home_url( '/?editmode=true' );
 					} else {
-						$return_url = urlencode( WPMUDEV_Dashboard::$ui->page_urls->themes_url );
+						$return_url       = urlencode( WPMUDEV_Dashboard::$ui->page_urls->themes_url );
 						$res->url->config = admin_url( 'customize.php?return=' . $return_url );
 					}
 				}
 			}
 			$res->screenshots = $remote['screenshots'];
+
+			$res->free_version_slug = $remote['free_version_slug'];
 
 			// Performance: Only fetch changelog if needed.
 			if ( $fetch_full ) {
@@ -1483,29 +1825,20 @@ class WPMUDEV_Dashboard_Site {
 					$pid,
 					$res->version_latest
 				);
+
 			}
 
-			$ProjectInfos[ $pid ] = $res;
+			self::$_cache_projectinfos[ $pid ] = $res;
 		}
 
 		// Following flags are not cached.
-		if ( $ProjectInfos[ $pid ] && is_object( $ProjectInfos[ $pid ] ) ) {
-			$ProjectInfos[ $pid ]->is_network_admin = $is_network_admin;
+		if ( self::$_cache_projectinfos[ $pid ] && is_object( self::$_cache_projectinfos[ $pid ] ) ) {
+			self::$_cache_projectinfos[ $pid ]->is_network_admin = $is_network_admin;
+		} else {
+			self::$_cache_projectinfos[ $pid ] = false;
 		}
 
-		return $ProjectInfos[ $pid ];
-	}
-
-	/**
-	 * Checks if a certain project is localy installed.
-	 *
-	 * @since  4.0.0
-	 * @param  int $project_id The project to check.
-	 * @return bool True if the project is installed.
-	 */
-	public function is_project_installed( $project_id ) {
-		$data = $this->get_cached_projects( $project_id );
-		return ( ! empty( $data ));
+		return self::$_cache_projectinfos[ $pid ];
 	}
 
 	/**
@@ -1522,12 +1855,19 @@ class WPMUDEV_Dashboard_Site {
 	 * Check if a given theme project id is an Upfront theme.
 	 *
 	 * @since  3.0.0
+	 *
 	 * @param  int $project_id The project to check.
+	 *
 	 * @return bool
 	 */
 	public function is_upfront_theme( $project_id ) {
-		if ( $project_id == $this->id_upfront ) { return false; }
-		if ( $project_id <= $this->id_legacy_themes ) { return false; }
+		if ( $project_id == $this->id_upfront ) {
+			return false;
+		}
+		if ( $project_id <= $this->id_legacy_themes ) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -1535,11 +1875,16 @@ class WPMUDEV_Dashboard_Site {
 	 * Check if a given theme project id is a legacy theme.
 	 *
 	 * @since  3.0.0
+	 *
 	 * @param  int $project_id The project to check.
+	 *
 	 * @return bool
 	 */
 	public function is_legacy_theme( $project_id ) {
-		if ( $project_id > $this->id_legacy_themes ) { return false; }
+		if ( $project_id > $this->id_legacy_themes ) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -1551,7 +1896,8 @@ class WPMUDEV_Dashboard_Site {
 	 */
 	public function is_upfront_installed() {
 		$data = $this->get_cached_projects( $this->id_upfront );
-		return ( ! empty( $data ));
+
+		return ( ! empty( $data ) );
 	}
 
 	/**
@@ -1561,7 +1907,7 @@ class WPMUDEV_Dashboard_Site {
 	 * @return bool
 	 */
 	public function is_upfront_theme_installed() {
-		$result = false;
+		$result         = false;
 		$local_projects = $this->get_cached_projects();
 
 		foreach ( $local_projects as $project_id => $project ) {
@@ -1585,8 +1931,8 @@ class WPMUDEV_Dashboard_Site {
 	 * @return bool
 	 */
 	public function get_active_wpmu_theme() {
-		$result = false;
-		$is_network_admin = is_multisite() && (is_network_admin() || ! empty( $_REQUEST['is_network'] ));
+		$result           = false;
+		$is_network_admin = is_multisite() && ( is_network_admin() || ! empty( $_REQUEST['is_network'] ) );
 
 		// Network-installations do not support this function.
 		if ( $is_network_admin ) {
@@ -1594,7 +1940,7 @@ class WPMUDEV_Dashboard_Site {
 		}
 
 		$local_projects = $this->get_cached_projects();
-		$current = get_option( 'stylesheet' );
+		$current        = get_option( 'stylesheet' );
 		foreach ( $local_projects as $project_id => $project ) {
 			if ( 'theme' == $project['type'] && $project['slug'] == $current ) {
 				$result = $project_id;
@@ -1606,28 +1952,6 @@ class WPMUDEV_Dashboard_Site {
 	}
 
 	/**
-	 * Checks if an installed project is the latest version or if an update
-	 * is available.
-	 *
-	 * @since  4.0.0
-	 * @param  int $project_id The project-ID.
-	 * @return bool True means there is an update (local project is outdated)
-	 */
-	public function is_update_available( $project_id ) {
-		if ( ! $this->is_project_installed( $project_id ) ) {
-			return false;
-		}
-
-		$local = $this->get_cached_projects( $project_id );
-		$local_version = $local['version'];
-
-		$remote = WPMUDEV_Dashboard::$api->get_project_data( $project_id );
-		$remote_version = $remote['version'];
-
-		return version_compare( $local_version, $remote_version, 'lt' );
-	}
-
-	/**
 	 * Checks if the current user is in the list of allowed users of the Dashboard.
 	 * Allows for multiple users allowed in define, e.g. in this format:
 	 *
@@ -1636,7 +1960,9 @@ class WPMUDEV_Dashboard_Site {
 	 * </code>
 	 *
 	 * @since  1.0.0
+	 *
 	 * @param  int $user_id Optional. If empty then the current user-ID is used.
+	 *
 	 * @return bool
 	 */
 	public function allowed_user( $user_id = null ) {
@@ -1667,7 +1993,9 @@ class WPMUDEV_Dashboard_Site {
 	 * Grant access to the WPMU DEV Dashboard to a new admin user.
 	 *
 	 * @since  4.0.0
+	 *
 	 * @param  int $user_id The user to add.
+	 *
 	 * @return bool True on success, false on failure.
 	 */
 	public function add_allowed_user( $user_id ) {
@@ -1708,7 +2036,9 @@ class WPMUDEV_Dashboard_Site {
 	 * Remove access to the WPMU DEV Dashboard from another admin user.
 	 *
 	 * @since  4.0.0
+	 *
 	 * @param  int $user_id The user to remove.
+	 *
 	 * @return bool True on success, false on failure.
 	 */
 	public function remove_allowed_user( $user_id ) {
@@ -1738,7 +2068,9 @@ class WPMUDEV_Dashboard_Site {
 	 * Dashboard.
 	 *
 	 * @since  1.0.0
+	 *
 	 * @param  bool $id_only Return only user-IDs or full usernames.
+	 *
 	 * @return array|bool
 	 */
 	public function get_allowed_users( $id_only = false ) {
@@ -1807,9 +2139,10 @@ class WPMUDEV_Dashboard_Site {
 			foreach ( $allowed as $user_id ) {
 				if ( $user_info = get_userdata( $user_id ) ) {
 					$result[] = array(
-						'id' => $user_id,
-						'name' => $user_info->display_name,
-						'is_me' => get_current_user_id() == $user_id,
+						'id'           => $user_id,
+						'name'         => $user_info->display_name,
+						'email'        => $user_info->user_email,
+						'is_me'        => get_current_user_id() == $user_id,
 						'profile_link' => get_edit_user_link( $user_id ),
 					);
 				}
@@ -1826,7 +2159,9 @@ class WPMUDEV_Dashboard_Site {
 	 * this user is not a potentialy but an actualy allowed user.
 	 *
 	 * @since  4.0.0
+	 *
 	 * @param  string $filter Optional. Filter by user name.
+	 *
 	 * @return array List of user-details
 	 */
 	protected function get_potential_users( $filter ) {
@@ -1837,7 +2172,7 @@ class WPMUDEV_Dashboard_Site {
 		 * assigned to a specific blog but only have access to the network
 		 * admin (on multisites).
 		 */
-		$sql = "
+		$sql    = "
 		SELECT
 			u.ID as id,
 			u.display_name,
@@ -1851,7 +2186,7 @@ class WPMUDEV_Dashboard_Site {
 			AND (u.display_name LIKE %s OR m_fn.meta_value LIKE %s OR m_ln.meta_value LIKE %s OR u.user_email LIKE %s)
 		";
 		$filter = '%' . $filter . '%';
-		$sql = $wpdb->prepare(
+		$sql    = $wpdb->prepare(
 			$sql,
 			get_current_user_id(),
 			$filter,
@@ -1872,17 +2207,23 @@ class WPMUDEV_Dashboard_Site {
 		// Filter users by capabilty.
 		foreach ( $res as $item ) {
 			$user = get_userdata( $item->id );
-			if ( ! $user || ! is_a( $user, 'WP_User' ) ) { continue; }
-			if ( ! $user->has_cap( $need_cap ) ) { continue; }
-			if ( $this->allowed_user( $user->ID ) ) { continue; }
+			if ( ! $user || ! is_a( $user, 'WP_User' ) ) {
+				continue;
+			}
+			if ( ! $user->has_cap( $need_cap ) ) {
+				continue;
+			}
+			if ( $this->allowed_user( $user->ID ) ) {
+				continue;
+			}
 
 			$items[] = (object) array(
-				'id' => $user->ID,
-				'name' => $user->display_name,
+				'id'         => $user->ID,
+				'name'       => $user->display_name,
 				'first_name' => $user->user_firstname,
-				'last_name' => $user->user_lastname,
-				'email' => $user->user_email,
-				'avatar' => get_avatar_url( $user->ID ),
+				'last_name'  => $user->user_lastname,
+				'email'      => $user->user_email,
+				'avatar'     => get_avatar_url( $user->ID ),
 			);
 		}
 
@@ -1893,16 +2234,20 @@ class WPMUDEV_Dashboard_Site {
 	 * Returns a list of projects that match the specified name.
 	 *
 	 * @since  4.0.0
+	 *
 	 * @param  string $filter Optional. Filter by project name.
+	 *
 	 * @return array List of project-details
 	 */
 	protected function find_projects_by_name( $filter ) {
-		$data = WPMUDEV_Dashboard::$api->get_membership_data();
+		$data     = WPMUDEV_Dashboard::$api->get_projects_data();
 		$projects = $data['projects'];
 
 		// Remove legacy themes.
 		foreach ( $projects as $key => $project ) {
-			if ( 'theme' != $project['type'] ) { continue; }
+			if ( 'theme' != $project['type'] ) {
+				continue;
+			}
 			if ( WPMUDEV_Dashboard::$site->is_legacy_theme( $project['id'] ) ) {
 				unset( $projects[ $key ] );
 			}
@@ -1913,15 +2258,19 @@ class WPMUDEV_Dashboard_Site {
 		foreach ( $projects as $item ) {
 			$data = $this->get_project_infos( $item['id'] );
 
-			if ( $data->is_hidden ) { continue; }
-			if ( false === stripos( $data->name, $filter ) ) { continue; }
+			if ( $data->is_hidden ) {
+				continue;
+			}
+			if ( false === stripos( $data->name, $filter ) ) {
+				continue;
+			}
 
 			$items[] = (object) array(
-				'id' => $data->pid,
-				'name' => $data->name,
-				'desc' => $data->info,
-				'logo' => $data->url->thumbnail,
-				'type' => $data->type,
+				'id'        => $data->pid,
+				'name'      => $data->name,
+				'desc'      => $data->info,
+				'logo'      => $data->url->thumbnail,
+				'type'      => $data->type,
 				'installed' => $data->is_installed,
 			);
 		}
@@ -1930,127 +2279,59 @@ class WPMUDEV_Dashboard_Site {
 	}
 
 	/**
-	 * Get the nonced admin url for installing a given project.
+	 * Detect if this is a development site running on a private/loopback IP
 	 *
-	 * @since 1.0.0
-	 * @param  int $project_id The project to install.
-	 * @return string|bool Generated admin url for installing the project.
+	 * @return bool
 	 */
-	public function auto_install_url( $project_id ) {
-		// Download possible?
-		if ( ! WPMUDEV_Dashboard::$api->has_key() ) { return false; }
-
-		$data = WPMUDEV_Dashboard::$api->get_membership_data();
-		$project = WPMUDEV_Dashboard::$api->get_project_data( $project_id );
-
-		// Valid project ID?
-		if ( empty( $project ) ) { return false; }
-
-		// Already installed?
-		if ( $this->is_project_installed( $project_id ) ) { return false; }
-
-		// Auto-update possible for this project?
-		if ( empty( $project['autoupdate'] ) ) { return false; }
-		if ( 1 != $project['autoupdate'] ) { return false; }
-
-		// User can install the project (license and tech requirements)?
-		if ( ! $this->user_can_install( $project_id ) ) { return false; }
-		if ( ! $this->is_project_compatible( $project_id ) ) { return false; }
-
-		// All good, create the download URL.
-		$url = false;
-		if ( 'plugin' == $project['type'] ) {
-			$url = wp_nonce_url(
-				self_admin_url( "update.php?action=install-plugin&plugin=wpmudev_install-$project_id" ),
-				"install-plugin_wpmudev_install-$project_id"
-			);
-		} elseif ( 'theme' == $project['type'] ) {
-			$url = wp_nonce_url(
-				self_admin_url( "update.php?action=install-theme&theme=wpmudev_install-$project_id" ),
-				"install-theme_wpmudev_install-$project_id"
-			);
+	public function is_localhost() {
+		$loopbacks = array( '127.0.0.1', '::1' );
+		if ( in_array( $_SERVER['REMOTE_ADDR'], $loopbacks ) ) {
+			return true;
 		}
 
-		return $url;
-	}
-
-	/**
-	 * Get the nonced admin url for updating a given project.
-	 *
-	 * @since 1.0.0
-	 * @param  int $project_id The project to install.
-	 * @return string|bool Generated admin url for updating the project.
-	 */
-	public function auto_update_url( $project_id ) {
-		// Download possible?
-		if ( ! WPMUDEV_Dashboard::$api->has_key() ) { return false; }
-
-		$data = WPMUDEV_Dashboard::$api->get_membership_data();
-		$project = WPMUDEV_Dashboard::$api->get_project_data( $project_id );
-
-		// Valid project ID?
-		if ( empty( $project ) ) { return false; }
-
-		// Already installed?
-		if ( ! $this->is_project_installed( $project_id ) ) { return false; }
-
-		$local = WPMUDEV_Dashboard::$site->get_cached_projects( $project_id );
-		if ( empty( $local ) ) { return false; }
-
-		// Auto-update possible for this project?
-		if ( empty( $project['autoupdate'] ) ) { return false; }
-		if ( 1 != $project['autoupdate'] ) { return false; }
-
-		// User can install the project (license and tech requirements)?
-		if ( ! $this->user_can_install( $project_id ) ) { return false; }
-		if ( ! $this->is_project_compatible( $project_id ) ) { return false; }
-
-		// All good, create the update URL.
-		$url = false;
-		if ( 'plugin' == $project['type'] ) {
-			$update_file = $local['filename'];
-			$url = wp_nonce_url(
-				self_admin_url( 'update.php?action=upgrade-plugin&plugin=' . $update_file ),
-				'upgrade-plugin_' . $update_file
-			);
-		} elseif ( 'theme' == $project['type'] ) {
-			$update_file = $local['slug'];
-			$url = wp_nonce_url(
-				self_admin_url( 'update.php?action=upgrade-theme&theme=' . $update_file ),
-				'upgrade-theme_' . $update_file
-			);
+		if ( ! filter_var( $_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE ) ) {
+			return true;
 		}
 
-		return $url;
+		return false;
 	}
 
 	/**
 	 * Check user permissions to see if we can install this project.
 	 *
 	 * @since  1.0.0
-	 * @param  int  $project_id The project to check.
+	 *
+	 * @param  int  $project_id   The project to check.
 	 * @param  bool $only_license Skip permission check, only validate license.
+	 *
 	 * @return bool
 	 */
 	public function user_can_install( $project_id, $only_license = false ) {
-		$data = WPMUDEV_Dashboard::$api->get_membership_data();
+		$data            = WPMUDEV_Dashboard::$api->get_projects_data();
 		$membership_type = WPMUDEV_Dashboard::$api->get_membership_type( $license_for );
 
 		// Basic check if we have valid data.
-		if ( empty( $data['membership'] ) ) { return false; }
-		if ( empty( $data['projects'] ) ) { return false; }
-		if ( empty( $data['projects'][ $project_id ] ) ) { return false; }
+		if ( empty( $data['projects'] ) ) {
+			return false;
+		}
+		if ( empty( $data['projects'][ $project_id ] ) ) {
+			return false;
+		}
 
 		$project = $data['projects'][ $project_id ];
 
 		if ( ! $only_license ) {
-			if ( ! $this->allowed_user() ) { return false; }
-			if ( ! $this->can_auto_install( $project['type'] ) ) { return false; }
+			if ( ! $this->allowed_user() ) {
+				return false;
+			}
+			if ( ! WPMUDEV_Dashboard::$upgrader->can_auto_install( $project['type'] ) ) {
+				return false;
+			}
 		}
 
 		$is_upfront = WPMUDEV_Dashboard::$site->id_upfront == $project_id;
-		$package = isset( $project['package'] ) ? $project['package'] : '';
-		$access = false;
+		$package    = isset( $project['package'] ) ? $project['package'] : '';
+		$access     = false;
 
 		if ( 'full' == $membership_type ) {
 			// User has full membership.
@@ -2076,86 +2357,6 @@ class WPMUDEV_Dashboard_Site {
 	}
 
 	/**
-	 * Check whether this project is compatible with the current install based
-	 * on requirements from API.
-	 *
-	 * @since  1.0.0
-	 * @param  int    $project_id The project to check.
-	 * @param  string $reason If incompatible the reason is stored in this
-	 *         output-parameter.
-	 * @return bool True if the project is compatible with current site.
-	 */
-	public function is_project_compatible( $project_id, &$reason = '' ) {
-		$data = WPMUDEV_Dashboard::$api->get_membership_data();
-		$reason = '';
-
-		if ( empty( $data['projects'][ $project_id ] ) ) {
-			return false;
-		}
-
-		$project = $data['projects'][ $project_id ];
-		if ( empty( $project['requires'] ) ) {
-			$reason = 'unknown requirements';
-			return false;
-		}
-
-		// Skip multisite only products if not compatible.
-		if ( 'ms' == $project['requires'] && ! is_multisite() ) {
-			$reason = 'multisite';
-			return false;
-		}
-
-		// Skip BuddyPress only products if not active.
-		if ( 'bp' == $project['requires'] && ! defined( 'BP_VERSION' ) ) {
-			$reason = 'buddypress';
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Can plugins be automatically installed? Checks filesystem permissions
-	 * and WP configuration to determine.
-	 *
-	 * @since  1.0.0
-	 * @param  string $type Either plugin or theme.
-	 * @return bool True means that projects can be downloaded automatically.
-	 */
-	public function can_auto_install( $type ) {
-		$root = false;
-		$writable = false;
-
-		// Are we dealing with direct access FS?
-		if ( ! function_exists( 'get_filesystem_method' ) ) {
-			include_once ABSPATH . '/wp-admin/includes/file.php';
-		}
-		$is_direct_access_fs = ( 'direct' == get_filesystem_method() );
-
-		if ( $is_direct_access_fs ) {
-			if ( 'plugin' == $type ) {
-				$root = WP_PLUGIN_DIR;
-			} else {
-				$root = WP_CONTENT_DIR . '/themes';
-			}
-
-			$writable = is_writable( $root );
-		}
-
-		// If we don't have write permissions, do we have FTP settings?
-		if ( ! $writable ) {
-			$writable = defined( 'FTP_USER' ) && defined( 'FTP_PASS' ) && defined( 'FTP_HOST' );
-		}
-
-		// Lastly, if no other option worked, do we have SSH settings?
-		if ( ! $writable ) {
-			$writable = defined( 'FTP_USER' ) && defined( 'FTP_PUBKEY' ) && defined( 'FTP_PRIKEY' );
-		}
-
-		return $writable;
-	}
-
-	/**
 	 * Returns a list of internal/hidden/deprecated projects.
 	 *
 	 * @since  4.0.0
@@ -2169,387 +2370,6 @@ class WPMUDEV_Dashboard_Site {
 
 		return $list;
 	}
-
-	/**
-	 * Download and install a plugin update.
-	 *
-	 * @since  4.0.0
-	 * @param  int  $pid The project ID.
-	 * @param  bool $die_on_error Default is true. Otherwise function will
-	 *              return false on error.
-	 * @return bool True on success.
-	 */
-	public function update_project( $pid, $die_on_error = true ) {
-		// Refresh local project cache before the update starts.
-		WPMUDEV_Dashboard::$site->set_option( 'refresh_local_flag', true );
-		$local_projects = WPMUDEV_Dashboard::$site->get_cached_projects();
-
-		// Now make sure that the project is updated, no matter what!
-		WPMUDEV_Dashboard::$api->calculate_upgrades( $local_projects, $pid );
-
-		if ( ! $this->is_project_installed( $pid ) ) {
-			if ( $die_on_error ) {
-				wp_send_json_error(
-					array( 'message' => __( 'Project not installed', 'wdpmudev' ) )
-				);
-			} else {
-				error_log( 'WPMU DEV error: Update failed - project not installed' );
-				return false;
-			}
-		}
-
-		$project = WPMUDEV_Dashboard::$site->get_project_infos( $pid );
-
-		// Upfront special: If updating a child theme first update parent.
-		if ( $project->need_upfront ) {
-			$upfront = WPMUDEV_Dashboard::$site->get_project_infos( $this->id_upfront );
-
-			// Time condition to avoid repeated UF checks if there was an error.
-			$check = (int) WPMUDEV_Dashboard::$site->get_option( 'last_check_upfront' );
-
-			if ( ! $upfront->is_installed ) {
-				if ( time() > $check + (3 * MINUTE_IN_SECONDS) ) {
-					WPMUDEV_Dashboard::$site->set_option( 'last_check_upfront', time() );
-					$this->install_project( $upfront->pid, $error, false );
-				}
-			} elseif ( $upfront->version_installed != $upfront->version_latest ) {
-				if ( time() > $check + (3 * MINUTE_IN_SECONDS) ) {
-					WPMUDEV_Dashboard::$site->set_option( 'last_check_upfront', time() );
-					$this->update_project( $upfront->pid, false );
-				}
-			}
-		}
-
-		// For plugins_api..
-		include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
-		include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
-
-		// Save on a bit of bandwidth.
-		$api = plugins_api(
-			'plugin_information',
-			array(
-				'slug' => 'wpmudev_install-' . $pid,
-				'fields' => array( 'sections' => false ),
-			)
-		);
-
-		if ( is_wp_error( $api ) ) {
-			if ( $die_on_error ) {
-				wp_send_json_error(
-					array( 'message' => __( 'No data found', 'wpmudev' ) )
-				);
-			} else {
-				error_log( 'WPMU DEV error: Update failed - no upgrade data found' );
-				return false;
-			}
-		}
-
-		ob_start();
-
-		$skin = new Automatic_Upgrader_Skin();
-		$result = false;
-		$success = false;
-		$update_file = $project->filename;
-
-		/*
-		 * Set before the update:
-		 * WP will refresh local cache via action-hook before the install()
-		 * method is finished. That refresh call must scan the FS again.
-		 */
-		$this->flush_fs_cache = true;
-		$this->flush_info_cache = true;
-
-		switch ( $project->type ) {
-			case 'plugin':
-				wp_update_plugins();
-
-				$upgrader = new Plugin_Upgrader( $skin );
-				$result = $upgrader->bulk_upgrade( array( $update_file ) );
-				break;
-
-			case 'theme':
-				wp_update_themes();
-
-				$upgrader = new Theme_Upgrader( $skin );
-				$update_file = dirname( $update_file );
-				$result = $upgrader->upgrade( $update_file );
-				break;
-		}
-
-		// Check for errors.
-		if ( is_array( $result ) && empty( $result[ $update_file ] ) && is_wp_error( $skin->result ) ) {
-			$result = $skin->result;
-		}
-
-		$details = ob_get_clean();
-
-		$err_data = array(
-			'error_code' => 'U000',
-			'message' => __( 'Update failed', 'wpmudev' ),
-			'details' => $details,
-			'pid' => $pid,
-		);
-
-		if ( is_array( $result ) && ! empty( $result[ $update_file ] ) ) {
-			$plugin_update_data = current( $result );
-
-			if ( true === $plugin_update_data ) {
-				$err_data['error_code'] = 'U001';
-				$err_data['message'] = implode( '<br>', $skin->get_upgrade_messages() );
-				error_log( 'WPMU DEV error: Update failed | ' . json_encode( $err_data ) );
-				if ( $die_on_error ) {
-					$this->send_json_error( $err_data );
-				} else {
-					return false;
-				}
-			}
-		} elseif ( is_wp_error( $result ) ) {
-			$err_data['error_code'] = 'U002';
-			$err_data['message'] = $result->get_error_message();
-			error_log( 'WPMU DEV error: Update failed | ' . json_encode( $err_data ) );
-			if ( $die_on_error ) {
-				$this->send_json_error( $err_data );
-			} else {
-				return false;
-			}
-		} elseif ( is_bool( $result ) && ! $result ) {
-			// $upgrader->upgrade() returned false.
-			// Possibly because WordPress did not find an update for the project.
-			$err_data['error_code'] = 'U003';
-			$err_data['message'] = __( 'Could not find update source', 'wpmudev' );
-			error_log( 'WPMU DEV error: Update failed | ' . json_encode( $err_data ) );
-			if ( $die_on_error ) {
-				$this->send_json_error( $err_data );
-			} else {
-				return false;
-			}
-		}
-
-		// API call to inform wpmudev site about the change.
-		$this->refresh_local_projects( 'remote' );
-
-		// Check if the update was successful.
-		$project = WPMUDEV_Dashboard::$site->get_project_infos( $pid );
-
-		if ( $project->version_installed != $project->version_latest ) {
-			if ( $die_on_error ) {
-				wp_send_json_error(
-					array( 'message' => __( 'Update failed. Maybe wrong folder permissions.', 'wdpmudev' ) )
-				);
-			} else {
-				error_log( 'WPMU DEV error: Upgrade failed - Maybe wrong folder permissions.' );
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Install a new plugin.
-	 *
-	 * @since  4.0.0
-	 * @param  int    $pid The project ID.
-	 * @param  string $error Output parameter. Holds error message.
-	 * @param  bool   $die_on_error If set to false the function will return
-	 *                false instead of die().
-	 * @return bool True on success.
-	 */
-	public function install_project( $pid, &$error = false, $die_on_error = true ) {
-		if ( $this->is_project_installed( $pid ) ) {
-			if ( $die_on_error ) {
-				wp_send_json_error(
-					array( 'message' => __( 'Already installed', 'wdpmudev' ) )
-				);
-			} else {
-				return false;
-			}
-		}
-
-		$project = WPMUDEV_Dashboard::$site->get_project_infos( $pid );
-
-		// Make sure Upfront is available before an upfront theme is installed.
-		if ( $project->need_upfront && ! $this->is_upfront_installed() ) {
-			$this->install_project( $this->id_upfront, $error, false );
-		}
-
-		// For plugins_api..
-		include_once( ABSPATH . 'wp-admin/includes/class-wp-upgrader.php' );
-		include_once( ABSPATH . 'wp-admin/includes/plugin-install.php' );
-
-		ob_start();
-
-		// Save on a bit of bandwidth.
-		$api = plugins_api(
-			'plugin_information',
-			array(
-				'slug' => 'wpmudev_install-' . $pid,
-				'fields' => array( 'sections' => false ),
-			)
-		);
-
-		if ( is_wp_error( $api ) ) {
-			if ( $die_on_error ) {
-				wp_send_json_error(
-					array( 'message' => __( 'No data found', 'wpmudev' ) )
-				);
-			} else {
-				return false;
-			}
-		}
-
-		$skin = new Automatic_Upgrader_Skin();
-
-		/*
-		 * Set before the update:
-		 * WP will refresh local cache via action-hook before the install()
-		 * method is finished. That refresh call must scan the FS again.
-		 */
-		$this->flush_fs_cache = true;
-		$this->flush_info_cache = true;
-
-		switch ( $project->type ) {
-			case 'plugin':
-				$upgrader = new Plugin_Upgrader( $skin );
-				$upgrader->install( $api->download_link );
-				break;
-
-			case 'theme':
-				$upgrader = new Theme_Upgrader( $skin );
-				$upgrader->install( $api->download_link );
-				break;
-		}
-
-		$details = ob_get_clean();
-
-		if ( is_wp_error( $skin->result ) ) {
-			$error = $skin->result->get_error_message();
-			$this->refresh_local_projects( 'remote' );
-			return false;
-		}
-
-		// API call to inform wpmudev site about the change.
-		$this->refresh_local_projects( 'remote' );
-
-		// Fetch latest project details.
-		$project = WPMUDEV_Dashboard::$site->get_project_infos( $pid );
-
-		if ( ! $project->is_installed && ! $error ) {
-			$error = __( 'Installation failed. Maybe wrong folder permissions.', 'wpmudev' );
-		}
-
-		return $project->is_installed;
-	}
-
-	/**
-	 * This function checks if the specified project is configured for automatic
-	 * upgrade in the background (without telling the user about the upgrade).
-	 *
-	 * If auto-upgrade is enabled then the information is stored in a option
-	 * value and the function returns true. The actual upgrade is done on next
-	 * page refresh.
-	 *
-	 * This function will only schedule auto-updates if the setting "Enable
-	 * automatic updates of WPMU DEV plugin" on the Manage page is enabled.
-	 *
-	 * @since  4.0.0
-	 * @param  object $project Return value of get_project_infos().
-	 * @return bool True means the project was scheduled for auto-upgrade.
-	 */
-	public function maybe_auto_upgrade( $project ) {
-		$autoupdate = WPMUDEV_Dashboard::$site->get_option( 'autoupdate_dashboard' );
-		if ( ! $autoupdate ) {
-			// Do nothing, auto-update is disabled!
-			return false;
-		}
-
-		/*
-		 * List of projects that will be automatically upgraded when the above
-		 * flag is enabled.
-		 */
-		$auto_update_projects = apply_filters(
-			'wpmudev_project_auto_update_projects',
-			array(
-				119, // WPMUDEV dashboard.
-			)
-		);
-
-		if ( in_array( $project->pid, $auto_update_projects ) ) {
-			if ( ! $project->can_autoupdate ) { return false; }
-
-			// Save the Project-ID to database.
-			$scheduled = WPMUDEV_Dashboard::$site->get_option( 'autoupdate_schedule' );
-			if ( ! is_array( $scheduled ) ) {
-				$scheduled = array();
-			}
-			$scheduled[] = $project->pid;
-			WPMUDEV_Dashboard::$site->set_option( 'autoupdate_schedule', $scheduled );
-
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * This function is called on every admin-page load and will update any
-	 * projects that were scheduled for auto-upgrade.
-	 *
-	 * After the upgrade the page is refreshed.
-	 *
-	 * @since  4.0.0
-	 */
-	public function process_auto_upgrade() {
-		$autoupdate = WPMUDEV_Dashboard::$site->get_option( 'autoupdate_dashboard' );
-		if ( ! $autoupdate ) {
-			// Do nothing, auto-update is disabled!
-			return;
-		}
-
-		$scheduled = WPMUDEV_Dashboard::$site->get_option( 'autoupdate_schedule' );
-		if ( ! is_array( $scheduled ) || ! count( $scheduled ) ) {
-			// Do nothing, no updates were scheduled!
-			return;
-		}
-
-		// Time condition to avoid blocking wp-admin infinite auto-update-loop.
-		// Issue should not occur anymore, but better save than sorry!
-		$check = (int) WPMUDEV_Dashboard::$site->get_option( 'last_check_autoupdate' );
-		if ( time() > $check + (3 * MINUTE_IN_SECONDS) ) {
-			// We installed auto-updates in last 3 minutes, not yet again...!
-			return;
-		}
-		WPMUDEV_Dashboard::$site->set_option( 'last_check_autoupdate', time() );
-
-		// Upgrade all projects.
-		foreach ( $scheduled as $pid ) {
-			// Note: We intentionally ignore the function return value here!
-			$res = $this->update_project( $pid, false );
-
-			// Log the result in default PHP error log.
-			if ( ! $res || WPMUDEV_API_DEBUG ) {
-				$msg = sprintf(
-					'[WPMUDEV Info] Project Auto-Upgrade for <%s> %s',
-					$pid,
-					($res ? 'is completed!' : 'has failed...')
-				);
-				error_log( $msg, 0 );
-			}
-		}
-
-		// Clear the whole update schedule!
-		WPMUDEV_Dashboard::$site->set_option( 'autoupdate_schedule', '' );
-
-		$args = array(
-			'wpmudev_msg' => '1',
-			'success' => time(),
-		);
-		$url = esc_url_raw( add_query_arg( $args ) );
-		header( 'X-Redirect-From: SITE process_auto_upgrade' );
-		wp_safe_redirect( $url );
-		exit;
-	}
-
 
 	/*
 	 * *********************************************************************** *
@@ -2597,19 +2417,19 @@ class WPMUDEV_Dashboard_Site {
 	 * @since  4.0.3
 	 */
 	public function notice_upfront_update() {
-		$upfront = $this->get_project_infos( $this->id_upfront );
-		$message = sprintf(
+		$upfront_url = '#update=' . $this->id_upfront;
+		$message     = sprintf(
 			'<b>%s</b><br>%s',
 			__( 'Awesome news for Upfront', 'wpmudev' ),
-			__( 'We have a new version of Upfront for you! Install it right now to get all the latest improvements and features', 'wpmudev' )
+			__( 'We have a new version of Upfront for you! Install it right now to get all the latest improvements and features.', 'wpmudev' )
 		);
 
 		$cta = sprintf(
 			'<span data-project="%s">
-			<a href="%s" class="button">Update Upfront</a>
+			<a href="%s" class="button show-project-update">Update Upfront</a>
 			</span>',
 			$this->id_upfront,
-			$upfront->url->update
+			$upfront_url
 		);
 
 		do_action( 'wpmudev_override_notice', $message, $cta );
@@ -2634,7 +2454,7 @@ class WPMUDEV_Dashboard_Site {
 		}
 
 		$search_for = $_REQUEST['plugin'];
-		$projects = $this->get_cached_projects();
+		$projects   = $this->get_cached_projects();
 		$project_id = false;
 		foreach ( $projects as $id => $item ) {
 			if ( $_REQUEST['plugin'] == $item['slug'] ) {
@@ -2653,10 +2473,11 @@ class WPMUDEV_Dashboard_Site {
 	 * changes found it will trigger remote api check and calculate upgrades as well.
 	 *
 	 * @since  1.0.0
-	 * @internal
+	 *
 	 * @param  string $check Either 'local' or 'remote'. Local will only scan
-	 *                the local FS for changes. Remote will also query the API
-	 *                and schedule updates.
+	 *                       the local FS for changes. Remote will also query the API
+	 *                       and schedule updates.
+	 *
 	 * @return array
 	 */
 	public function refresh_local_projects( $check = 'remote' ) {
@@ -2671,12 +2492,19 @@ class WPMUDEV_Dashboard_Site {
 		$md5_fs = md5( json_encode( $local_projects ) );
 
 		if ( 'remote' == $check || $md5_db != $md5_fs ) {
-			// Refresh data as installed plugins have changed.
-			$data = WPMUDEV_Dashboard::$api->refresh_membership_data( $local_projects );
-		}
+			self::$_cache_themeupdates  = false;
+			self::$_cache_pluginupdates = false;
+			$this->set_transient(
+				'local_projects',
+				$local_projects,
+				5 * MINUTE_IN_SECONDS
+			);
+			$this->set_option( 'updates_available', false );
+			WPMUDEV_Dashboard::$api->hub_sync( $local_projects );
 
-		// Recalculate upgrades with current/updated data.
-		WPMUDEV_Dashboard::$api->calculate_upgrades( $local_projects );
+			// Recalculate upgrades with current/updated data.
+			WPMUDEV_Dashboard::$api->calculate_upgrades( $local_projects );
+		}
 
 		return $local_projects;
 	}
@@ -2684,27 +2512,14 @@ class WPMUDEV_Dashboard_Site {
 	/**
 	 * Used to call refresh_local_projects from a hook (strip passed arguments)
 	 *
-	 * @since  1.0.0
+	 * @since    1.0.0
 	 * @internal Action hook
 	 */
 	public function refresh_local_projects_wrapper() {
-		static $ResetCache = false;
-
-		// Do not refresh the cache when current user cannot update plugins.
-		if ( ! current_user_can( 'update_plugins' ) ) {
-			$ResetCache = true;
-		}
-
-		// First time this function is called we clear all local caches.
-		if ( ! $ResetCache ) {
-			$ResetCache = true;
-			$this->flush_fs_cache = true;
-			$this->flush_transient = true;
-			$this->set_option( 'refresh_local_flag', 1 );
-			$this->set_option( 'updates_available', false );
-		}
-
-		if ( isset( $_GET['force-check'] ) ) {
+		if ( self::$_refresh_updates_flag || isset( $_GET['force-check'] ) ) {
+			self::$_refresh_updates_flag  = false;
+			self::$_refresh_shutdown_flag = false;
+			WPMUDEV_Dashboard::$api->refresh_projects_data();
 			$this->refresh_local_projects( 'remote' );
 		} else {
 			$this->refresh_local_projects( 'local' );
@@ -2718,7 +2533,7 @@ class WPMUDEV_Dashboard_Site {
 	 * This information is used by API::refresh_membership_data() to send an
 	 * accurate list of active projects to the API server.
 	 *
-	 * @todo  We do not want to use site-loops. Find a different way!
+	 * @todo   We do not want to use site-loops. Find a different way!
 	 *
 	 * @since  4.0.8
 	 */
@@ -2790,6 +2605,18 @@ class WPMUDEV_Dashboard_Site {
 	}
 
 	/**
+	 * This handler is called right before starting an upgrade/installation
+	 * process, it makes sure that the upgrader will get uncached and
+	 * up-to-date details.
+	 *
+	 * @since  4.1.0
+	 */
+	public function clear_local_file_cache() {
+		self::$_cache_projectinfos = false;
+		$this->set_transient( 'local_projects', false );
+	}
+
+	/**
 	 * This handler is called right after a plugin was installed or updated.
 	 * It instructs the dashboard to flush all caches (i.e. filesystem is
 	 * scanned again, the transient is re-generated, ...)
@@ -2797,20 +2624,27 @@ class WPMUDEV_Dashboard_Site {
 	 * @since  4.0.7
 	 */
 	public function after_local_files_changed() {
-		$this->flush_transient = true;
-		$this->flush_fs_cache = true;
-		$this->flush_info_cache = true;
+		self::$_cache_themeupdates  = false;
+		self::$_cache_pluginupdates = false;
+		$this->clear_local_file_cache();
 	}
 
 	/**
-	 * After WordPress deletes the Theme-/Plugin-Updates transient, we also
-	 * flush the local Transient cache to reflect that changes.
+	 * Something happened that we need to send data to DEV, so schedule it to run on shutdown hook
 	 *
-	 * @since  4.0.7
+	 * @since  4.2
 	 */
-	public function after_transient_changed() {
-		$this->flush_transient = true;
-		$this->set_option( 'updates_available', false );
+	public function schedule_shutdown_refresh() {
+		self::$_refresh_shutdown_flag = true;
+	}
+
+	/**
+	 * Sends latest data to DEV if schedule at end of page load
+	 */
+	public function shutdown_refresh() {
+		if ( self::$_refresh_shutdown_flag && ! defined( 'WPMUDEV_REMOTE_SKIP_SYNC' ) ) {
+			WPMUDEV_Dashboard::$site->refresh_local_projects( 'remote' );
+		}
 	}
 
 	/**
@@ -2823,97 +2657,97 @@ class WPMUDEV_Dashboard_Site {
 	 * @return array Local projects
 	 */
 	protected function scan_fs_local_projects() {
-		static $FS_Cache = null;
 		$projects = array();
 
-		if ( $this->flush_fs_cache ) {
-			$FS_Cache = null;
+		// ----------------------------------------------------------------------------------
+		// Plugins directory.
+		// ----------------------------------------------------------------------------------
+		$plugins_root = WP_PLUGIN_DIR;
+		if ( empty( $plugins_root ) ) {
+			$plugins_root = ABSPATH . 'wp-content/plugins';
 		}
 
-		if ( null === $FS_Cache ) {
-			$this->flush_fs_cache = false;
-			// ----------------------------------------------------------------------------------
-			// Plugins directory.
-			// ----------------------------------------------------------------------------------
-			$plugins_root = WP_PLUGIN_DIR;
-			if ( empty( $plugins_root ) ) {
-				$plugins_root = ABSPATH . 'wp-content/plugins';
+		$items = $this->find_project_files( $plugins_root, '.php', true );
+		foreach ( $items as $item ) {
+			if ( isset( $projects[ $item['pid'] ] ) ) {
+				continue;
 			}
 
-			$items = $this->find_project_files( $plugins_root, '.php', true );
-			foreach ( $items as $item ) {
-				if ( isset( $projects[ $item['pid'] ] ) ) { continue; }
-
-				$item['type'] = 'plugin';
-				$projects[ $item['pid'] ] = $item;
-			}
-
-			// ----------------------------------------------------------------------------------
-			// mu-plugins directory.
-			// ----------------------------------------------------------------------------------
-			$mu_plugins_root = WPMU_PLUGIN_DIR;
-			if ( empty( $mu_plugins_root ) ) {
-				$mu_plugins_root = ABSPATH . 'wp-content/mu-plugins';
-			}
-
-			$items = $this->find_project_files( $mu_plugins_root, '.php', false );
-			foreach ( $items as $item ) {
-				if ( isset( $projects[ $item['pid'] ] ) ) { continue; }
-
-				$item['type'] = 'muplugin';
-				$projects[ $item['pid'] ] = $item;
-			}
-
-			// ----------------------------------------------------------------------------------
-			// wp-content directory.
-			// ----------------------------------------------------------------------------------
-			$content_plugins_root = WP_CONTENT_DIR;
-			if ( empty( $content_plugins_root ) ) {
-				$content_plugins_root = ABSPATH . 'wp-content';
-			}
-
-			$items = $this->find_project_files( $content_plugins_root, '.php', false );
-			foreach ( $items as $item ) {
-				if ( isset( $projects[ $item['pid'] ] ) ) { continue; }
-
-				$item['type'] = 'dropin';
-				$projects[ $item['pid'] ] = $item;
-			}
-
-			// ----------------------------------------------------------------------------------
-			// Themes directory.
-			// ----------------------------------------------------------------------------------
-			$themes_root = WP_CONTENT_DIR . '/themes';
-			if ( empty( $themes_root ) ) {
-				$themes_root = ABSPATH . 'wp-content/themes';
-			}
-
-			$items = $this->find_project_files( $themes_root, '.css', true );
-
-			foreach ( $items as $item ) {
-				// Skip 133-Farm-Pack themes.
-				if ( $item['pid'] == $this->id_farm133_themes ) { continue; }
-
-				// Skip child themes.
-				if ( false !== strpos( $item['filename'], '-child' ) ) { continue; }
-
-				$item['type'] = 'theme';
-				$item['slug'] = basename( dirname( $item['path'] ) );
-				$projects[ $item['pid'] ] = $item;
-			}
-
-			$farm133_themes = $this->scan_fs_farm133_themes();
-
-			if ( count( $farm133_themes ) ) {
-				$farm133_project = reset( $farm133_themes );
-				$projects[ $this->id_farm133_themes ] = $farm133_project;
-			}
-
-			// ----------------------------------------------------------------------------------
-			$FS_Cache = $projects;
+			$item['type']             = 'plugin';
+			$projects[ $item['pid'] ] = $item;
 		}
 
-		return $FS_Cache;
+		// ----------------------------------------------------------------------------------
+		// mu-plugins directory.
+		// ----------------------------------------------------------------------------------
+		$mu_plugins_root = WPMU_PLUGIN_DIR;
+		if ( empty( $mu_plugins_root ) ) {
+			$mu_plugins_root = ABSPATH . 'wp-content/mu-plugins';
+		}
+
+		$items = $this->find_project_files( $mu_plugins_root, '.php', false );
+		foreach ( $items as $item ) {
+			if ( isset( $projects[ $item['pid'] ] ) ) {
+				continue;
+			}
+
+			$item['type']             = 'muplugin';
+			$projects[ $item['pid'] ] = $item;
+		}
+
+		// ----------------------------------------------------------------------------------
+		// wp-content directory.
+		// ----------------------------------------------------------------------------------
+		$content_plugins_root = WP_CONTENT_DIR;
+		if ( empty( $content_plugins_root ) ) {
+			$content_plugins_root = ABSPATH . 'wp-content';
+		}
+
+		$items = $this->find_project_files( $content_plugins_root, '.php', false );
+		foreach ( $items as $item ) {
+			if ( isset( $projects[ $item['pid'] ] ) ) {
+				continue;
+			}
+
+			$item['type']             = 'dropin';
+			$projects[ $item['pid'] ] = $item;
+		}
+
+		// ----------------------------------------------------------------------------------
+		// Themes directory.
+		// ----------------------------------------------------------------------------------
+		$themes_root = WP_CONTENT_DIR . '/themes';
+		if ( empty( $themes_root ) ) {
+			$themes_root = ABSPATH . 'wp-content/themes';
+		}
+
+		$items = $this->find_project_files( $themes_root, '.css', true );
+
+		foreach ( $items as $item ) {
+			// Skip 133-Farm-Pack themes.
+			if ( $item['pid'] == $this->id_farm133_themes ) {
+				continue;
+			}
+
+			// Skip child themes.
+			if ( false !== strpos( $item['filename'], '-child' ) ) {
+				continue;
+			}
+
+			$item['type']             = 'theme';
+			$item['slug']             = basename( dirname( $item['path'] ) );
+			$projects[ $item['pid'] ] = $item;
+		}
+
+		$farm133_themes = $this->scan_fs_farm133_themes();
+
+		if ( count( $farm133_themes ) ) {
+			$farm133_project                      = reset( $farm133_themes );
+			$projects[ $this->id_farm133_themes ] = $farm133_project;
+		}
+
+
+		return $projects;
 	}
 
 	/**
@@ -2930,15 +2764,19 @@ class WPMUDEV_Dashboard_Site {
 		}
 
 		$farm133_themes = array();
-		$items = $this->find_project_files( $themes_root, '.css', true );
-		$version = false;
+		$items          = $this->find_project_files( $themes_root, '.css', true );
+		$version        = false;
 
 		foreach ( $items as $item ) {
 			// Skip Non-133-Farm-Pack themes.
-			if ( $item['pid'] != $this->id_farm133_themes ) { continue; }
+			if ( $item['pid'] != $this->id_farm133_themes ) {
+				continue;
+			}
 
 			// Skip child themes.
-			if ( false !== strpos( $item['filename'], '-child' ) ) { continue; }
+			if ( false !== strpos( $item['filename'], '-child' ) ) {
+				continue;
+			}
 
 			$item['type'] = 'theme';
 			$item['slug'] = dirname( $item['filename'] );
@@ -2955,37 +2793,47 @@ class WPMUDEV_Dashboard_Site {
 	 * Returns an array of relevant files from the specified folder.
 	 *
 	 * @since  4.0.0
-	 * @param  strong $path The absolute path to the base directory to scan.
-	 * @param  string $ext File extension to return (i.e. '.php' or '.css').
+	 *
+	 * @param  strong $path          The absolute path to the base directory to scan.
+	 * @param  string $ext           File extension to return (i.e. '.php' or '.css').
 	 * @param  bool   $check_subdirs False will ignore files in sub-directories.
+	 *
 	 * @return array Details about all WPMU Projects found in the directory.
-	 *         @var  pid
-	 *         @var  name
-	 *         @var  filename
-	 *         @var  path
-	 *         @var  version
+	 * @var  pid
+	 * @var  name
+	 * @var  filename
+	 * @var  path
+	 * @var  version
 	 */
 	protected function find_project_files( $path, $ext = '.php', $check_subdirs = true ) {
-		$files = array();
-		$items = array();
-		$h_dir = false;
+		$files    = array();
+		$items    = array();
+		$h_dir    = false;
 		$h_subdir = false;
-		$ext_len = strlen( $ext );
+		$ext_len  = strlen( $ext );
 
 		if ( is_dir( $path ) ) {
 			$h_dir = @opendir( $path );
 		}
 
 		while ( $h_dir && ( $file = readdir( $h_dir ) ) !== false ) {
-			if ( substr( $file, 0, 1 ) == '.' ) { continue; }
+			if ( substr( $file, 0, 1 ) == '.' ) {
+				continue;
+			}
 
 			if ( is_dir( $path . '/' . $file ) ) {
-				if ( ! $check_subdirs ) { continue; }
+				if ( ! $check_subdirs ) {
+					continue;
+				}
 
 				$h_subdir = @opendir( $path . '/' . $file );
 				while ( $h_subdir && ( $subfile = readdir( $h_subdir ) ) !== false ) {
-					if ( substr( $subfile, 0, 1 ) == '.' ) { continue; }
-					if ( ! is_readable( "$path/$file/$subfile" ) ) { continue; }
+					if ( substr( $subfile, 0, 1 ) == '.' ) {
+						continue;
+					}
+					if ( ! is_readable( "$path/$file/$subfile" ) ) {
+						continue;
+					}
 
 					if ( substr( $subfile, - $ext_len ) == $ext ) {
 						$files[] = "$file/$subfile";
@@ -2995,7 +2843,9 @@ class WPMUDEV_Dashboard_Site {
 					@closedir( $h_subdir );
 				}
 			} else {
-				if ( ! is_readable( "$path/$file" ) ) { continue; }
+				if ( ! is_readable( "$path/$file" ) ) {
+					continue;
+				}
 
 				if ( substr( $file, - $ext_len ) == $ext ) {
 					$files[] = $file;
@@ -3010,12 +2860,12 @@ class WPMUDEV_Dashboard_Site {
 			$data = $this->get_id_plugin( "$path/$file" );
 			if ( ! empty( $data['id'] ) ) {
 				$items[] = array(
-					'pid' => $data['id'],
-					'name' => $data['name'],
+					'pid'      => $data['id'],
+					'name'     => $data['name'],
 					'filename' => $file,
-					'path' => "$path/$file",
-					'version' => $data['version'],
-					'slug' => 'wpmudev_install-' . $data['id'],
+					'path'     => "$path/$file",
+					'version'  => $data['version'],
+					'slug'     => 'wpmudev_install-' . $data['id'],
 				);
 			}
 		}
@@ -3026,18 +2876,20 @@ class WPMUDEV_Dashboard_Site {
 	/**
 	 * Get our special WDP ID header line from the file.
 	 *
-	 * @uses get_file_data()
+	 * @uses   get_file_data()
 	 * @since  1.0.0
 	 * @internal
+	 *
 	 * @param  string $plugin_file Main file of the plugin.
+	 *
 	 * @return array Plugin details: name, id, version.
 	 */
 	protected function get_id_plugin( $plugin_file ) {
 		return get_file_data(
 			$plugin_file,
 			array(
-				'name' => 'Plugin Name',
-				'id' => 'WDP ID',
+				'name'    => 'Plugin Name',
+				'id'      => 'WDP ID',
 				'version' => 'Version',
 			)
 		);
@@ -3046,11 +2898,13 @@ class WPMUDEV_Dashboard_Site {
 	/**
 	 * Hooks into the plugin update api to add our custom api data.
 	 *
-	 * @since  1.0.0
+	 * @since    1.0.0
 	 * @internal Action handler
-	 * @param  object $res Default update-info provided by WordPress.
+	 *
+	 * @param  object $res    Default update-info provided by WordPress.
 	 * @param  string $action What action was requested (theme or plugin?).
-	 * @param  object $args Details used to build default update-info.
+	 * @param  object $args   Details used to build default update-info.
+	 *
 	 * @return object Modified theme/plugin update-info.
 	 */
 	public function filter_plugin_update_info( $res, $action, $args ) {
@@ -3073,20 +2927,20 @@ class WPMUDEV_Dashboard_Site {
 
 		$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 
-		$string = explode( '-', $args->slug );
-		$id = intval( $string[1] );
-		$data = WPMUDEV_Dashboard::$api->get_membership_data();
+		$string   = explode( '-', $args->slug );
+		$id       = intval( $string[1] );
+		$data     = WPMUDEV_Dashboard::$api->get_projects_data();
 		$projects = $data['projects'];
 
 		if ( isset( $projects[ $id ] ) && 1 == $projects[ $id ]['autoupdate'] ) {
 			$res = (object) array(
-				'name' => $projects[ $id ]['name'],
-				'slug' => sanitize_title( $projects[ $id ]['name'] ),
-				'version' => $projects[ $id ]['version'],
-				'rating' => 100,
-				'homepage' => $projects[ $id ]['url'],
+				'name'          => $projects[ $id ]['name'],
+				'slug'          => sanitize_title( $projects[ $id ]['name'] ),
+				'version'       => $projects[ $id ]['version'],
+				'rating'        => 100,
+				'homepage'      => $projects[ $id ]['url'],
 				'download_link' => WPMUDEV_Dashboard::$api->rest_url_auth( 'install/' . $id ),
-				'tested' => $cur_wp_version,
+				'tested'        => $cur_wp_version,
 			);
 
 			return $res;
@@ -3097,27 +2951,29 @@ class WPMUDEV_Dashboard_Site {
 	 * Update the transient value of available plugin updates right before WordPress saves it to
 	 * the database.
 	 *
-	 * @since  1.0.0
+	 * @since    1.0.0
 	 * @internal Action hook
+	 *
 	 * @param  object $value The transient value that will be saved.
+	 *
 	 * @return object Modified transient value.
 	 */
 	public function filter_plugin_update_count( $value ) {
-		static $PluginTransient = null;
+		global $wp_version;
+		$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 
-		if ( ! is_object( $value ) ) { return $value; }
-
-		if ( $this->flush_transient ) {
-			$PluginTransient = null;
+		if ( ! is_object( $value ) ) {
+			return $value;
 		}
 
-		if ( null === $PluginTransient ) {
-			$this->flush_transient = false;
-
+		if ( ! self::$_cache_pluginupdates ) {
 			// First remove all installed WPMUDEV plugins from the WP update data.
 			$local_projects = WPMUDEV_Dashboard::$site->get_cached_projects();
+
 			foreach ( $local_projects as $id => $update ) {
-				if ( 'plugin' != $update['type'] ) { continue; }
+				if ( 'plugin' != $update['type'] ) {
+					continue;
+				}
 				if ( isset( $value->response[ $update['filename'] ] ) ) {
 					unset( $value->response[ $update['filename'] ] );
 				}
@@ -3136,25 +2992,38 @@ class WPMUDEV_Dashboard_Site {
 			if ( is_array( $updates ) && count( $updates ) ) {
 
 				foreach ( $updates as $id => $plugin ) {
-					if ( 'theme' == $plugin['type'] ) { continue; }
-					if ( '2' == $plugin['autoupdate'] ) { continue; }
+					if ( 'theme' == $plugin['type'] ) {
+						continue;
+					}
+					if ( '2' == $plugin['autoupdate'] ) {
+						continue;
+					}
 
-					$package = '';
+					$package    = '';
 					$autoupdate = false;
-					$local = $this->get_cached_projects( $id );
-					$last_changes = $plugin['changelog'];
+					$local      = $this->get_cached_projects( $id );
+					//$last_changes = $plugin['changelog'];
 
 					if ( '1' == $plugin['autoupdate'] && WPMUDEV_Dashboard::$api->has_key() ) {
 						$package = WPMUDEV_Dashboard::$api->rest_url_auth( 'download/' . $id );
 					}
 
+					$thumb = isset( $plugin['thumbnail'] ) ? $plugin['thumbnail'] : '';
+
 					// Build plugin class.
 					$object = (object) array(
-						'url' => $plugin['url'],
-						'slug' => $local['slug'],
+						'id'          => "wpmudev/plugins/$id",
+						'slug'        => $local['slug'],
+						'plugin'      => $plugin['filename'],
 						'new_version' => $plugin['new_version'],
-						'package' => $package,
-						'autoupdate' => $autoupdate,
+						'url'         => $plugin['url'],
+						'package'     => $package,
+						'icons'       => array(
+							'1x'      => $thumb,
+							'default' => $thumb,
+						),
+						'autoupdate'  => $autoupdate,
+						'tested'      => $cur_wp_version,
 					);
 
 					// Add update information to response.
@@ -3162,10 +3031,10 @@ class WPMUDEV_Dashboard_Site {
 				}
 			}
 
-			$PluginTransient = $value;
+			self::$_cache_pluginupdates = $value;
 		}
 
-		return $PluginTransient;
+		return self::$_cache_pluginupdates;
 	}
 
 	/**
@@ -3173,32 +3042,34 @@ class WPMUDEV_Dashboard_Site {
 	 * WordPress read it from the database.
 	 * We add the WPMUDEV theme-updates to the default list of theme updates.
 	 *
-	 * @since  1.0.0
+	 * @since    1.0.0
 	 * @internal Action hook
+	 *
 	 * @param  object $value The transient value that will be saved.
+	 *
 	 * @return object Modified transient value.
 	 */
 	public function filter_theme_update_count( $value ) {
-		static $ThemeTransient = null;
+		global $wp_version;
+		$cur_wp_version = preg_replace( '/-.*$/', '', $wp_version );
 
-		if ( ! is_object( $value ) ) { return $value; }
-
-		if ( $this->flush_transient ) {
-			$ThemeTransient = null;
+		if ( ! is_object( $value ) ) {
+			return $value;
 		}
 
-		if ( null === $ThemeTransient ) {
-			$this->flush_transient = false;
-
+		if ( ! self::$_cache_themeupdates ) {
 			// First remove all installed WPMUDEV themes from the WP update data.
 			$local_projects = WPMUDEV_Dashboard::$site->get_cached_projects();
 			foreach ( $local_projects as $id => $update ) {
-				if ( 'theme' != $update['type'] ) { continue; }
-				if ( isset( $value->response[ $update['filename'] ] ) ) {
-					unset( $value->response[ $update['filename'] ] );
+				if ( 'theme' != $update['type'] ) {
+					continue;
 				}
-				if ( isset( $value->no_update[ $update['filename'] ] ) ) {
-					unset( $value->no_update[ $update['filename'] ] );
+				$theme_slug = dirname( $update['filename'] );
+				if ( isset( $value->response[ $theme_slug ] ) ) {
+					unset( $value->response[ $theme_slug ] );
+				}
+				if ( isset( $value->no_update[ $theme_slug ] ) ) {
+					unset( $value->no_update[ $theme_slug ] );
 				}
 			}
 
@@ -3211,17 +3082,30 @@ class WPMUDEV_Dashboard_Site {
 			if ( is_array( $updates ) && count( $updates ) ) {
 				// Loop all available WPMUDEV updates and merge them into WP updates.
 				foreach ( $updates as $id => $theme ) {
-					if ( 'theme' != $theme['type'] ) { continue; }
-					if ( '1' != $theme['autoupdate'] ) { continue; }
+					if ( 'theme' != $theme['type'] ) {
+						continue;
+					}
+					if ( '1' != $theme['autoupdate'] ) {
+						continue;
+					}
 
 					$theme_slug = dirname( $theme['filename'] );
 
 					// Build theme listing.
-					$object = array();
-					$object['url'] = WPMUDEV_Dashboard::$api->rest_url( 'usage/' . $id );
+					$object                = array();
+					$object['pid']         = $id; //we add this so we can detect it later when wp core autoupdater triggers
+					$object['theme']       = $theme_slug;
 					$object['new_version'] = $theme['new_version'];
-					$object['package'] = WPMUDEV_Dashboard::$api->rest_url_auth( 'download/' . $id );
-					$object['theme'] = $theme_slug;
+					$object['url']         = add_query_arg(
+						array(
+							'action' => 'wdp-changelog',
+							'pid'    => $id,
+							'hash'   => wp_create_nonce( 'changelog' ),
+						),
+						admin_url( 'admin-ajax.php' )
+					);
+					$object['package']     = WPMUDEV_Dashboard::$api->rest_url_auth( 'download/' . $id );
+					$object['tested']      = $cur_wp_version;
 
 					// Add changes back into response.
 					$value->response[ $theme_slug ] = $object;
@@ -3232,11 +3116,13 @@ class WPMUDEV_Dashboard_Site {
 			$themepack = WPMUDEV_Dashboard::$site->get_farm133_themepack();
 			if ( is_array( $themepack ) && count( $themepack ) ) {
 				foreach ( $themepack as $slug => $theme ) {
-					if ( ! isset( $theme['filename'] ) ) { continue; }
-					$local_version = $theme['version'];
+					if ( ! isset( $theme['filename'] ) ) {
+						continue;
+					}
+					$local_version  = $theme['version'];
 					$latest_version = $local_version;
-					$theme_slug = dirname( $theme['filename'] );
-					$theme_id = $theme['pid'];
+					$theme_slug     = dirname( $theme['filename'] );
+					$theme_id       = $theme['pid'];
 
 					// Remove the 133theme from WP update list.
 					if ( ! isset( $value->response[ $theme_slug ] ) ) {
@@ -3250,17 +3136,800 @@ class WPMUDEV_Dashboard_Site {
 
 					if ( version_compare( $local_version, $latest_version, '<' ) ) {
 						$value->response[ $theme_slug ]['new_version'] = $latest_version;
-						$value->response[ $theme_slug ]['package'] = '';
+						$value->response[ $theme_slug ]['package']     = '';
 					} else {
 						unset( $value->response[ $theme_slug ] );
 					}
 				}
 			}
 
-			$ThemeTransient = $value;
+			self::$_cache_themeupdates = $value;
 		}
 
-		return $ThemeTransient;
+		return self::$_cache_themeupdates;
+	}
+
+	/**
+	 * Prints our custom async js tracking code in the site footer.
+	 *
+	 * @since 4.6
+	 */
+	public function analytics_tracking_code() {
+		$analytics_enabled = WPMUDEV_Dashboard::$site->get_option( 'analytics_enabled' );
+		$analytics_site_id = WPMUDEV_Dashboard::$site->get_option( 'analytics_site_id' );
+		$analytics_tracker = WPMUDEV_Dashboard::$site->get_option( 'analytics_tracker' );
+		if ( is_wpmudev_member() && $analytics_enabled && $analytics_site_id && $analytics_tracker ) {
+			?>
+
+			<script type="text/javascript">
+				var _paq = _paq || [];
+				<?php
+				if ( is_multisite() ) {
+					// This lets us use page titles view to filter basic results for a subsite based on domain (works with domain mapping too)
+					echo '_paq.push(["setDocumentTitle", "' . get_current_blog_id() . '/" + document.title]);' . PHP_EOL;
+					if ( is_subdomain_install() ) { // makes sure visitors are tracked across multisite (except domain mapped)
+						echo '	_paq.push(["setCookieDomain", "*.' . parse_url( network_home_url(), PHP_URL_HOST ) . '"]);' . PHP_EOL;
+						echo '	_paq.push(["setDomains", "*.' . parse_url( network_home_url(), PHP_URL_HOST ) . '"]);' . PHP_EOL;
+					}
+				}
+				// collect author stats on single post views, excluding pages.
+				if ( is_single() ) {
+					echo '	_paq.push([\'setCustomDimension\', 1, \'{"ID":' . get_the_author_meta( 'ID' ) . ',"name":"' . esc_js( get_the_author_meta( 'display_name' ) ) . '","avatar":"'
+					     . md5( get_the_author_meta( 'user_email' ) ) . '"}\']);' . PHP_EOL;
+				}
+				?>
+				_paq.push(['trackPageView']);
+				<?php
+				/*
+				if ( ! is_multisite() ) { // link tracking would be too heavy on multisite, and have problems with domain mapping
+					echo "_paq.push(['enableLinkTracking']);" . PHP_EOL;
+				}
+				*/
+				?>
+				(function () {
+					var u = "<?php echo trailingslashit( $analytics_tracker ); ?>";
+					_paq.push(['setTrackerUrl', u + 'track/']);
+					_paq.push(['setSiteId', '<?php echo intval( $analytics_site_id ); ?>']);
+					var d   = document, g = d.createElement('script'), s = d.getElementsByTagName('script')[0];
+					g.type  = 'text/javascript';
+					g.async = true;
+					g.defer = true;
+					g.src   = 'https://stats.wpmucdn.com/analytics.js';
+					s.parentNode.insertBefore(g, s);
+				})();
+			</script>
+			<?php
+		}
+	}
+
+	/**
+	 * Can current blog user access the analytics widget.
+	 *
+	 * Translates the minimum role as defined in settings into a level capability, then checks if current user
+	 *  has that capability.
+	 *
+	 * @return bool
+	 */
+	public function user_can_analytics() {
+		$cap  = "level_10"; // default to administrator
+		$role = get_role( WPMUDEV_Dashboard::$site->get_option( 'analytics_role' ) );
+		if ( is_object( $role ) ) {
+			for ( $i = 0; $i <= 12; $i ++ ) { // admin is 10, but we'll go a little past it just in case!
+				if ( isset( $role->capabilities["level_$i"] ) && $role->capabilities["level_$i"] ) {
+					$cap = "level_$i";
+				}
+			}
+		}
+
+		return current_user_can( $cap );
+	}
+
+	/**
+	 * Get Metrics displayed on analytics widget
+	 *
+	 * @since 4.7
+	 * @return array
+	 */
+	public function get_metrics_on_analytics() {
+		$metrics = $this->get_option( 'analytics_metrics' );
+
+		// default to all displayed
+		if ( false === $metrics ) {
+			$metrics = array(
+				'pageviews',
+				'unique_pageviews',
+				'page_time',
+				'bounce_rate',
+				'exit_rate',
+				'gen_time',
+			);
+		}
+
+		return $metrics;
+	}
+
+	/**
+	 * Get whitelabel settings as array assoc
+	 *
+	 * This function included default structure for whitelabel settings
+	 * Static call allowed as long `WPMUDEV_Dashboard::$site` initialized
+	 *
+	 * @since 4.5.3
+	 *
+	 * @param array $whitelabel_settings_structure optional array assoc with expectation,
+	 *                                             use when override needed only
+	 *
+	 * @see   WPMUDEV_Dashboard_Site::get_options_as_array()
+	 *
+	 * @return array
+	 */
+	public function get_whitelabel_settings( $whitelabel_settings_structure = array() ) {
+		// default structure
+		$default_structure = array(
+			'enabled'           => array(
+				'option_name'   => 'whitelabel_enabled', // option_name to be retrieved
+				'expected_type' => 'boolean',
+				'default'       => false, // default value when, option is non-exist or expected_type not fulfilled
+			),
+			'branding_enabled'  => array(
+				'option_name'   => 'whitelabel_branding_enabled',
+				'expected_type' => 'boolean',
+				'default'       => false,
+			),
+			'branding_image'    => array(
+				'option_name'   => 'whitelabel_branding_image',
+				'expected_type' => 'string',
+				'default'       => '',
+			),
+			'footer_enabled'    => array(
+				'option_name'   => 'whitelabel_footer_enabled',
+				'expected_type' => 'boolean',
+				'default'       => false,
+			),
+			'footer_text'       => array(
+				'option_name'   => 'whitelabel_footer_text',
+				'expected_type' => 'string',
+				'default'       => '',
+			),
+			'doc_links_enabled' => array(
+				'option_name'   => 'whitelabel_doc_links_enabled',
+				'expected_type' => 'boolean',
+				'default'       => false,
+			),
+		);
+
+		$whitelabel_settings_structure = array_merge( $default_structure, $whitelabel_settings_structure );
+
+		return WPMUDEV_Dashboard::$site->get_options_as_array( $whitelabel_settings_structure );
+	}
+
+	/**
+	 * Get WPMUDEV branding that should be used
+	 *
+	 * @since 4.6
+	 *
+	 * @param mixed  $default_branding
+	 * @param string $type (`all`, `hide_branding`, `hero_image`, `change_footer`, `footer_text`, `hide_doc_link`)
+	 *
+	 * @return mixed
+	 */
+	public function get_wpmudev_branding( $default_branding, $type = 'all' ) {
+		/**
+		 * - hero_image
+		 * - footer_text
+		 * - hide_doc_link
+		 */
+
+		$branding = $default_branding;
+
+		if ( ! is_array( $default_branding ) ) {
+			$default_branding = array();
+		}
+		if ( ! isset( $default_branding['hide_branding'] ) ) {
+			$default_branding['hide_branding'] = false;
+		}
+		if ( ! isset( $default_branding['hero_image'] ) ) {
+			$default_branding['hero_image'] = '';
+		}
+		if ( ! isset( $default_branding['change_footer'] ) ) {
+			$default_branding['change_footer'] = false;
+		}
+		if ( ! isset( $default_branding['footer_text'] ) ) {
+			$default_branding['footer_text'] = sprintf( __( 'Made with %s by WPMU DEV', 'wpmudev' ), '<i class="sui-icon-heart" aria-hidden="true"></i>' );
+		}
+		if ( ! isset( $default_branding['hide_doc_link'] ) ) {
+			$default_branding['hide_doc_link'] = false;
+		}
+
+		$whitelabel_settings = WPMUDEV_Dashboard::$site->get_whitelabel_settings();
+		$membership_type     = WPMUDEV_Dashboard::$api->get_membership_type( $dummy );
+
+		if ( $whitelabel_settings['enabled'] && 'full' === $membership_type ) {
+			if ( 'hide_branding' === $type ) {
+				return $whitelabel_settings['branding_enabled'];
+			}
+			$default_branding['hide_branding'] = $whitelabel_settings['branding_enabled'];
+			if ( $whitelabel_settings['branding_enabled'] ) {
+				if ( 'hero_image' === $type ) {
+					return $whitelabel_settings['branding_image'];
+				}
+				$default_branding['hero_image'] = $whitelabel_settings['branding_image'];
+			}
+			if ( 'change_footer' === $type ) {
+				return $whitelabel_settings['footer_enabled'];
+			}
+			$default_branding['change_footer'] = $whitelabel_settings['footer_enabled'];
+			if ( $whitelabel_settings['footer_enabled'] ) {
+				if ( 'footer_text' === $type ) {
+					return $whitelabel_settings['footer_text'];
+				}
+				$default_branding['footer_text'] = $whitelabel_settings['footer_text'];
+			}
+			if ( 'hide_doc_link' === $type ) {
+				return $whitelabel_settings['doc_links_enabled'];
+			}
+			$default_branding['hide_doc_link'] = $whitelabel_settings['doc_links_enabled'];
+		}
+
+		if ( 'all' === $type ) {
+			return $default_branding;
+		}
+
+		return $branding;
+	}
+
+	/**
+	 * Get hide branding flag
+	 *
+	 * @since 4.6
+	 *
+	 * @param bool $hide_branding
+	 *
+	 * @return bool
+	 */
+	public function get_wpmudev_branding_hide_branding( $hide_branding ) {
+		return $this->get_wpmudev_branding( $hide_branding, 'hide_branding' );
+	}
+
+	/**
+	 * Get Hero Image for branding
+	 *
+	 * @since 4.6
+	 *
+	 * @param string $hero_image
+	 *
+	 * @return string
+	 */
+	public function get_wpmudev_branding_hero_image( $hero_image ) {
+		return $this->get_wpmudev_branding( $hero_image, 'hero_image' );
+	}
+
+	/**
+	 * Get Footer Text for branding
+	 *
+	 * @since 4.6
+	 *
+	 * @param bool $change_footer
+	 *
+	 * @return bool
+	 */
+	public function get_wpmudev_branding_change_footer( $change_footer ) {
+		return $this->get_wpmudev_branding( $change_footer, 'change_footer' );
+	}
+
+	/**
+	 * Get Footer Text for branding
+	 *
+	 * @since 4.6
+	 *
+	 * @param string $footer_text
+	 *
+	 * @return string
+	 */
+	public function get_wpmudev_branding_footer_text( $footer_text ) {
+		return $this->get_wpmudev_branding( $footer_text, 'footer_text' );
+	}
+
+	/**
+	 * Get Footer Text for branding
+	 *
+	 * @since 4.6
+	 *
+	 * @param bool $hide_doc_link
+	 *
+	 * @return string
+	 */
+	public function get_wpmudev_branding_hide_doc_link( $hide_doc_link ) {
+		return $this->get_wpmudev_branding( $hide_doc_link, 'hide_doc_link' );
+	}
+
+	/**
+	 * Get multiple options into single array assoc
+	 *
+	 * This function will match expectation structure,
+	 * Array returned from this function should be predictable
+	 *
+	 * @since 4.6
+	 *
+	 * @param array $expected_structure            optional array assoc with setting name as key
+	 *                                             and value is array with [`expected_type` ,`default`, `option_name`]
+	 *                                             - supported `expected_type` : `boolean`, `string`, `numeric`, `array`
+	 *                                             - default value when, option is non-exist or expected_type not fulfilled
+	 *                                             - option_name to be retrieved
+	 *
+	 * @return array
+	 */
+	public function get_options_as_array( $expected_structure ) {
+		$supported_expected_types = array(
+			'boolean',
+			'string',
+			'numeric',
+			'array',
+		);
+
+		$options = array();
+		foreach ( $expected_structure as $key => $expectation ) {
+			// when not specified, fallback default value is `false`,
+			// same behavior as get_site_option
+			$options[ $key ] = isset( $expectation['default'] ) ? $expectation['default'] : false;
+			if ( isset( $expectation['option_name'] ) && ! empty( $expectation['option_name'] ) ) {
+				$option_value = $this->get_option( $expectation['option_name'] );
+				// initiate with value returned form `get_option`
+				$options[ $key ] = $option_value;
+			}
+			// process expected_type
+			if ( isset( $expectation['expected_type'] ) && in_array( $expectation['expected_type'], $supported_expected_types ) ) {
+				switch ( $expectation['expected_type'] ) {
+					case 'boolean':
+						$boolean         = filter_var( $options[ $key ], FILTER_VALIDATE_BOOLEAN );
+						$options[ $key ] = $boolean;
+						break;
+					case 'string':
+						// string expected, when its `empty`(NULL, false, etc) or its not string lets return empty string
+						if ( empty( $options[ $key ] ) || ! is_string( $options[ $key ] ) ) {
+							$options[ $key ] = '';
+						}
+						break;
+					case 'numeric':
+						// numeric expected, its safe to return "0.7" even the explicit type is string
+						// since PHP will auto coerce the type naturally
+						if ( ! is_numeric( $options[ $key ] ) ) {
+							$options[ $key ] = 0;
+						}
+						break;
+					case 'array':
+						// array expected
+						if ( ! is_array( $options[ $key ] ) ) {
+							// this will check current value, then return appropriate array value
+							if ( empty( $options[ $key ] ) ) {
+								//make it compatible with empty array
+								$options[ $key ] = array();
+							} else {
+								$options[ $key ] = (array) $options[ $key ];
+							}
+
+						}
+						break;
+					default:
+						// don't process default, let it return $option_value if any as it is
+						$options[ $key ] = $option_value;
+						break;
+
+				}
+			}
+		}
+
+		return $options;
+	}
+
+	/**
+	 * This function is where main logic of whitelabel-ing executed across plugins
+	 *
+	 * Couple hooks can be utilized by other plugin itself, to ease process of whitelabel-ing
+	 *
+	 * @since 4.6
+	 *
+	 * @param $hook_suffix
+	 *
+	 * @return bool
+	 */
+	public function whitelabel_plugin_admin_pages( $hook_suffix ) {
+		if ( ! isset( $hook_suffix ) || empty( $hook_suffix ) ) {
+			return false;
+		}
+
+		$whitelabel_settings = WPMUDEV_Dashboard::$site->get_whitelabel_settings();
+		$membership_type     = WPMUDEV_Dashboard::$api->get_membership_type( $dummy );
+
+		// activated
+		if ( ! $whitelabel_settings['enabled'] || 'full' !== $membership_type ) {
+			return false;
+		}
+
+		// base page of current screen map-ed to callable function(s)
+		$plugin_pages = array(
+			/**
+			 * Hummingbird
+			 */
+			// Hummingbird MultiSite/SingleSite dashboard
+			'toplevel_page_wphb'                     => array(
+				'wpmudev_whitelabel_sui_plugins_branding',
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+			// Hummingbird MultiSite subsite dashboard
+			'toplevel_page_wphb-performance'         => array(
+				'wpmudev_whitelabel_sui_plugins_branding',
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+			// performance page
+			'hummingbird-pro_page_wphb-performance'  => array(
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+			// caching page
+			'hummingbird-pro_page_wphb-caching'      => array(
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+			// gzip page
+			'hummingbird-pro_page_wphb-gzip'         => array(
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+			// advanced
+			'hummingbird-pro_page_wphb-advanced'     => array(
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+			// uptime
+			'hummingbird-pro_page_wphb-uptime'       => array(
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+			// minification / Asset Optimization
+			'hummingbird-pro_page_wphb-minification' => array(
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+
+			/**
+			 * Smush
+			 */
+			// Smush dashboard
+			'toplevel_page_smush'                    => array(
+				'wpmudev_whitelabel_sui_plugins_branding',
+				'wpmudev_whitelabel_sui_plugins_footer',
+				'wpmudev_whitelabel_sui_plugins_doc_links',
+			),
+		);
+
+		/**
+		 * Filter Plugin Pages Map to be whitelabel-ed
+		 *
+		 * This should return array, with `key` WP_Screen.base,
+		 * and `value` is array with `callable`, it's queue, first registered, first executed
+		 *
+		 * Callable function should accept array as parameter,
+		 * Within this array there will be `page_base`, `settings`.
+		 *
+		 * Callable is executed within `admin_head-$hook_suffix`
+		 * with `999` as priority, which expected to be last-executed
+		 *
+		 * If callable are multiple then it works as queue,
+		 * First registered, First executed,
+		 * means `$callabels[0]` will called first
+		 *
+		 * If need to attach into another hook example `admin_print_footer_scripts`
+		 * then attach it inside its callable function
+		 *
+		 * Using this filter encouraged, to avoid race condition,
+		 * in case plugin hooks is loaded first before Dash plugin initiated,
+		 * which will be needed as `WPMUDEV_Dashboard::$site->get_whitelabel_settings();` must be initiated
+		 *
+		 * @since 4.6
+		 *
+		 * @param array $plugin_pages
+		 */
+		$plugin_pages                        = apply_filters( 'wpmudev_whitelabel_plugin_pages', $plugin_pages );
+		$admin_print_footer_scripts_priority = 999;
+
+		// target configured pages
+		if ( in_array( $hook_suffix, array_keys( $plugin_pages ) ) ) {
+			$callables = $plugin_pages[ $hook_suffix ];
+			foreach ( $callables as $callable ) {
+				add_action( "admin_head-{$hook_suffix}", $callable, $admin_print_footer_scripts_priority );
+			}
+
+			return true;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * Replace Free version plugin with Pro version if possible
+	 *
+	 * Since 4.7
+	 *
+	 * @param int  $project_id
+	 * @param null $doing_ajax force enable/disable ajax-ify response, if `null` it will check `DOING_AJAX` constant
+	 *
+	 * @return bool
+	 */
+	public function maybe_replace_free_with_pro( $project_id, $doing_ajax = null ) {
+		if ( null === $doing_ajax ) {
+			$doing_ajax = defined( 'DOING_AJAX' ) && DOING_AJAX;
+		}
+
+		$pid           = (int) $project_id;
+		$project_infos = $this->get_project_infos( $pid );
+		if ( ! isset( $project_infos->pid ) || $pid !== $project_infos->pid ) {
+			if ( $doing_ajax ) {
+				$this->send_json_error( array( 'message' => __( 'Failed to find plugin id.', 'wpmudev' ) ) );
+			}
+
+			return false;
+
+		}
+
+		$free_filename            = '';
+		$is_free_installed        = false;
+		$is_pro_success_installed = false;
+		if ( ! isset( $project_infos->free_version_slug ) || empty( $project_infos->free_version_slug ) ) {
+			$is_free_installed = false;
+		} else {
+			$free_filename = $project_infos->free_version_slug;
+
+			// check if its installed
+			if ( ! function_exists( 'get_plugins' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			$all_plugins = get_plugins();
+			foreach ( $all_plugins as $slug => $all_plugin ) {
+				$slug          = plugin_basename( $slug );
+				$free_filename = plugin_basename( $free_filename );
+				if ( $slug === $free_filename ) {
+					$is_free_installed = true;
+					break;
+				}
+			}
+		}
+
+		$local = WPMUDEV_Dashboard::$site->get_cached_projects( $pid );
+		// means its not installed yet
+		if ( empty( $local ) ) {
+			// INSTALL PRO Plugin
+			$install_pro = WPMUDEV_Dashboard::$upgrader->install( $pid );
+			if ( ! $install_pro ) {
+				$err = WPMUDEV_Dashboard::$upgrader->get_error();
+				if ( $doing_ajax ) {
+					$this->send_json_error( $err );
+				}
+
+				return false;
+
+			}
+			$is_pro_success_installed = true;
+		}
+
+		$orig_active_blog    = false;
+		$orig_active_network = false;
+
+		if ( $is_free_installed ) {
+			// first thing first, DEACTIVATE
+			// save current state for next usage
+			$orig_active_blog    = is_plugin_active( $free_filename );
+			$orig_active_network = is_multisite() && is_plugin_active_for_network( $free_filename );
+			if ( $orig_active_blog || $orig_active_network ) {
+				deactivate_plugins( $free_filename, true, $orig_active_network );
+			}
+		}
+
+		// clear local cache, because we need if fresh data
+		$this->clear_local_file_cache();
+		$local        = WPMUDEV_Dashboard::$site->get_cached_projects( $pid );
+		$pro_filename = $local['filename'];
+
+		// Set with previous state if is not
+		if ( $orig_active_blog || $orig_active_network ) {
+			$active_blog    = is_plugin_active( $pro_filename );
+			$active_network = is_multisite() && is_plugin_active_for_network( $pro_filename );
+
+			if ( $orig_active_blog && ! $active_blog ) {
+				$activated = activate_plugin( $pro_filename, false, false, true );
+				if ( is_wp_error( $activated ) ) {
+
+					if ( $is_free_installed ) {
+						// attempt restore
+						activate_plugin( $free_filename, false, false, true );
+					}
+
+					if ( $doing_ajax ) {
+						$this->send_json_error( array( 'message' => $activated->get_error_message() ) );
+					}
+
+					return false;
+
+				}
+			}
+			if ( $orig_active_network && ! $active_network ) {
+				$activated = activate_plugin( $pro_filename, false, true, true );
+				if ( is_wp_error( $activated ) ) {
+
+					if ( $is_free_installed ) {
+						// attempt restore
+						activate_plugin( $free_filename, false, true, true );
+					}
+
+					if ( $doing_ajax ) {
+						$this->send_json_error( array( 'message' => $activated->get_error_message() ) );
+					}
+
+					return false;
+
+				}
+			}
+		}
+
+
+		if ( $is_free_installed && $is_pro_success_installed ) {
+			// DELETE FREE Plugin
+			$skip_uninstall_hook = true;
+			$delete_free         = WPMUDEV_Dashboard::$upgrader->delete_plugin( $free_filename, $skip_uninstall_hook );
+			if ( ! $delete_free ) {
+				$err = WPMUDEV_Dashboard::$upgrader->get_error();
+				if ( $doing_ajax ) {
+					$this->send_json_error( $err );
+				}
+
+				return false;
+
+			}
+		}
+
+		$this->clear_local_file_cache();
+
+		return true;
+	}
+
+	/**
+	 * Get Free versions of DEV projects that installed on this site
+	 *
+	 * @since 4.7
+	 * @return array
+	 */
+	public function get_installed_free_projects() {
+
+		// ensure got fresh data
+		WPMUDEV_Dashboard::$api->refresh_projects_data();
+
+		$projects                = WPMUDEV_Dashboard::$api->get_projects_data();
+		$projects                = isset( $projects['projects'] ) ? $projects['projects'] : array();
+		$available_free_projects = array();
+		foreach ( $projects as $project_id => $project ) {
+			if ( isset( $project['free_version_slug'] ) && ! empty( $project['free_version_slug'] ) ) {
+				$available_free_projects[ $project['free_version_slug'] ] = $project;
+			}
+		}
+
+		$installed_free_projects = array();
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		$installed_plugins = get_plugins();
+		foreach ( $installed_plugins as $slug => $installed_plugin ) {
+			if ( in_array( $slug, array_keys( $available_free_projects ), true ) ) {
+				$plugins_root = WP_PLUGIN_DIR;
+				if ( empty( $plugins_root ) ) {
+					$plugins_root = ABSPATH . 'wp-content/plugins';
+				}
+				$file_data = get_file_data( $plugins_root . DIRECTORY_SEPARATOR . $slug, array( 'WDP_ID' => 'WDP ID' ) );
+
+				// Skip WDP ID
+				if ( isset( $file_data['WDP_ID'] ) && ! empty( $file_data['WDP_ID'] ) ) {
+					continue;
+				}
+
+				$installed_free_project = $available_free_projects[ $slug ];
+				// use name from FREE version
+				$installed_free_project['name']   = $installed_plugin['Name'];
+				$installed_free_projects[ $slug ] = $installed_free_project;
+			}
+		}
+
+		return $installed_free_projects;
+	}
+
+	/**
+	 * Autologin to dashbaord
+	 * - Hub sync
+	 * - Auto upgrade free plugins to pro
+	 */
+	public function dashboard_autologin() {
+
+		$key               = isset( $_REQUEST['apikey'] ) ? trim( $_REQUEST['apikey'] ) : false;
+		$skip_free_upgrade = isset( $_REQUEST['skip_upgrade_free_plugins'] ) ? true : false;
+
+		if ( ! $key ) {
+			$this->send_json_error(
+				array(
+					'type'    => 'invalid_key',
+					'message' => __( 'Your API Key was invalid.', 'wpmudev' ),
+				)
+			);
+		}
+
+		$previous_key = '';
+		if ( WPMUDEV_Dashboard::$api->has_key() ) {
+			$previous_key = WPMUDEV_Dashboard::$api->get_key();
+		}
+		WPMUDEV_Dashboard::$api->set_key( $key );
+		$result = WPMUDEV_Dashboard::$api->hub_sync( false, true );
+		if ( ! $result || empty( $result['membership'] ) ) {
+			// return to previous key to avoid logout
+			WPMUDEV_Dashboard::$api->set_key( $previous_key );
+			if ( false === $result ) {
+				$this->send_json_error(
+					array(
+						'type'    => 'connection_error',
+						'message' => __( 'Your server had a problem connecting to WPMU DEV.', 'wpmudev' ),
+					)
+				);
+			}
+			$this->send_json_error(
+				array(
+					'type'    => 'invalid_key',
+					'message' => __( 'Your API Key was invalid.', 'wpmudev' ),
+				)
+			);
+		}
+
+		// valid key
+		global $current_user;
+		WPMUDEV_Dashboard::$site->set_option( 'limit_to_user', $current_user->ID );
+		WPMUDEV_Dashboard::$api->refresh_profile();
+
+		// in case timeout use ?skip_upgrade_free_plugins
+		if ( $skip_free_upgrade ) {
+			$this->send_json_success(
+				array(
+					'skip_upgrade_free_plugins' => true,
+				)
+			);
+		}
+
+		// sync free plugins!, time execution will vary depends on installed plugins and server connection
+		$upgraded_plugins = array();
+		$type             = WPMUDEV_Dashboard::$api->get_membership_type( $project_id );
+		if ( 'full' === $type ) {
+			$installed_free_projects = WPMUDEV_Dashboard::$site->get_installed_free_projects();
+
+			foreach ( $installed_free_projects as $installed_free_project ) {
+				$upgraded_plugin = array(
+					'pid'         => $installed_free_project['id'],
+					'name'        => $installed_free_project['name'],
+					'is_upgraded' => false,
+				);
+				if ( $this->maybe_replace_free_with_pro( $installed_free_project['id'], false ) ) {
+					$upgraded_plugin['is_upgraded'] = true;
+				}
+
+				$upgraded_plugins[] = $upgraded_plugin;
+			}
+		}
+
+		$this->send_json_success(
+			array(
+				'skip_upgrade_free_plugins' => false,
+				'upgrade_free_plugins'      => $upgraded_plugins,
+			)
+		);
+
 	}
 }
 
@@ -3272,6 +3941,7 @@ class WPMUDEV_Dashboard_Site {
  */
 function is_wpmudev_member() {
 	$type = WPMUDEV_Dashboard::$api->get_membership_type( $not_used );
+
 	return 'full' == $type;
 }
 
@@ -3282,6 +3952,7 @@ function is_wpmudev_member() {
  * if the member is not on a single license)
  *
  * @since  4.0.0
+ *
  * @param  int $pid Optional. The project ID to validate.
  *
  * @return bool|int
@@ -3296,5 +3967,195 @@ function is_wpmudev_single_member( $pid = false ) {
 			return $licensed_project_id;
 		}
 	}
+
 	return false;
 }
+
+// this function(s) placed here as its not directly related with WPMUDev Site module
+if ( ! function_exists( 'wpmudev_whitelabel_sui_plugins_branding' ) ) {
+	/**
+	 * Whitelabel-ing Dashboard Hero image WPMUDev plugins that using SharedUI (sui) as base
+	 *
+	 * Its ONLY for SharedUI that have similar markup
+	 * This function will accept no args, since it should called on `admin_head-$hook_suffix`
+	 * Try to utilize `WPMUDEV_Dashboard::` if its needed
+	 *
+	 * @since 4.6
+	 *
+	 */
+	function wpmudev_whitelabel_sui_plugins_branding() {
+		$whitelabel_settings = WPMUDEV_Dashboard::$site->get_whitelabel_settings();
+
+		$output = '';
+		if ( $whitelabel_settings['branding_enabled'] ) {
+			$image                    = $whitelabel_settings['branding_image'];
+			$additional_summary_class = ! empty( $image ) ? 'sui-rebranded' : 'sui-unbranded';
+			ob_start();
+			?>
+			<style>
+				#wpbody-content .sui-wrap div.sui-box.sui-summary {
+					background-image: url(<?php echo esc_url($image)?>);
+				}
+				<?php if (empty($image)):?>
+				#wpbody-content .sui-wrap div.sui-box.sui-summary .sui-summary-image-space {
+					display: none;
+				}
+				#wpbody-content .sui-wrap div.sui-box.sui-summary .sui-summary-segment {
+					width: calc(100% / 2 - 2px);
+				}
+				#wpbody-content .sui-wrap div.sui-box.sui-summary > div:nth-child(2).sui-summary-segment {
+					padding-left: 0;
+				}
+				@media (max-width: 600px) {
+					#wpbody-content .sui-wrap div.sui-box.sui-summary .sui-summary-segment {
+						width: 100%;
+					}
+				}
+				<?php else:?>
+				#wpbody-content .sui-wrap div.sui-box.sui-summary {
+					background-position: 3% 50%;
+				}
+				<?php endif;?>
+			</style>
+			<script type="text/javascript">
+				if (typeof window.jQuery !== "undefined") {
+					jQuery(document).ready(function () {
+						var wpmudev_whitelabel_summary_class = function () {
+							var sui_summary = jQuery('#wpbody-content .sui-wrap div.sui-box.sui-summary');
+							sui_summary.addClass('<?php echo esc_html( $additional_summary_class ); ?>');
+						}();
+					})
+				}
+			</script>
+			<?php
+			$output = ob_get_clean();
+		}
+
+
+		/**
+		 * Filter output SUI whitelabel-ing
+		 *
+		 * @since 4.6
+		 */
+		$output = apply_filters( 'wpmudev_whitelabel_sui_plugins_branding', $output );
+		echo $output;
+	}
+}
+
+if ( ! function_exists( 'wpmudev_whitelabel_sui_plugins_footer' ) ) {
+	/**
+	 * Whitelabel-ing Footer WPMUDev plugins that using SharedUI (sui) as base
+	 *
+	 * Its ONLY for SharedUI that have similar markup
+	 * This function will accept no args, since it should called on `admin_head-$hook_suffix`
+	 * Try to utilize `WPMUDEV_Dashboard::` if its needed
+	 *
+	 * @since 4.6
+	 *
+	 */
+	function wpmudev_whitelabel_sui_plugins_footer() {
+		$whitelabel_settings = WPMUDEV_Dashboard::$site->get_whitelabel_settings();
+
+		$output = '';
+		if ( $whitelabel_settings['footer_enabled'] ) {
+			$text = $whitelabel_settings['footer_text'];
+			ob_start();
+			?>
+			<style>
+				#wpbody-content .sui-footer {
+					visibility: hidden;
+				}
+				#wpbody-content .sui-footer-nav {
+					display: none;
+				}
+				#wpbody-content .sui-footer-social {
+					display: none;
+				}
+			</style>
+			<script type="text/javascript">
+				if (typeof window.jQuery !== "undefined") {
+					jQuery(document).ready(function () {
+						var wpmudev_whitelabel_footer = function () {
+							var sui_footer = jQuery('#wpbody-content .sui-footer');
+							sui_footer.html('<?php echo esc_html( $text )?>');
+							sui_footer.css('visibility', 'visible');
+						}();
+					})
+				}
+			</script>
+			<?php
+			$output = ob_get_clean();
+		}
+
+
+		/**
+		 * Filter output SUI whitelabel-ing
+		 *
+		 * @since 4.6
+		 */
+		$output = apply_filters( 'wpmudev_whitelabel_sui_plugins_footer', $output );
+		echo $output;
+	}
+}
+
+if ( ! function_exists( 'wpmudev_whitelabel_sui_plugins_docs' ) ) {
+	/**
+	 * Whitelabel-ing Docs buttons WPMUDev plugins that using SharedUI (sui) as base
+	 *
+	 * Its ONLY for SharedUI that have similar markup
+	 * This function will accept no args, since it should called on `admin_head-$hook_suffix`
+	 * Try to utilize `WPMUDEV_Dashboard::` if its needed
+	 *
+	 * @since 4.6
+	 *
+	 */
+	function wpmudev_whitelabel_sui_plugins_doc_links() {
+		$whitelabel_settings = WPMUDEV_Dashboard::$site->get_whitelabel_settings();
+
+		$output = '';
+		if ( $whitelabel_settings['doc_links_enabled'] ) {
+			ob_start();
+			// this one need to be done via javascript
+			// because some page have another extra button like `New Test` \ `Recheck-images`
+			?>
+			<style>
+				#wpbody-content .sui-wrap .sui-header .sui-actions-right {
+					visibility: hidden;;
+				}
+			</style>
+			<script type="text/javascript">
+				if (typeof window.jQuery !== "undefined") {
+					jQuery(document).ready(function () {
+						var wpmudev_whitelabel_docs = function () {
+							var sui_action_right          = jQuery('#wpbody-content .sui-wrap .sui-header .sui-actions-right');
+							var header_right_action_links = sui_action_right.find('a');
+							if (header_right_action_links.length) {
+								header_right_action_links.each(function () {
+									var link = jQuery(this),
+									    href = link.attr('href');
+									// remove docs.*
+									if (/premium\.wpmudev\.org\/(docs|project)\/.*/i.test(href)) {
+										link.remove();
+									}
+								});
+							}
+							sui_action_right.css('visibility', 'visible');
+						}();
+					})
+				}
+			</script>
+			<?php
+			$output = ob_get_clean();
+		}
+
+
+		/**
+		 * Filter output SUI whitelabel-ing
+		 *
+		 * @since 4.6
+		 */
+		$output = apply_filters( 'wpmudev_whitelabel_sui_plugins_doc_links', $output );
+		echo $output;
+	}
+}
+

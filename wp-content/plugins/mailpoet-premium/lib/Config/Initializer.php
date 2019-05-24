@@ -2,56 +2,65 @@
 
 namespace MailPoet\Premium\Config;
 
-use MailPoet\Config\AccessControl;
-use MailPoet\Models\Setting;
+use MailPoet\DI\ContainerWrapper;
 use MailPoet\Premium\DynamicSegments\SegmentStringsFilter;
 use MailPoet\Premium\Models\NewsletterExtraData;
 use MailPoet\Premium\AutomaticEmails\AutomaticEmails as AutomaticEmails;
 use MailPoet\Premium\Newsletter\GATracking;
-use MailPoet\WP\Hooks;
+use MailPoet\WP\Functions as WPFunctions;
+use MailPoet\Settings\SettingsController;
 use MailPoet\Premium\Config\Hooks as ConfigHooks;
+use MailPoetVendor\Psr\Container\ContainerInterface;
 
-if(!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) exit;
 
 class Initializer {
   /** @var Menu */
   private $menu;
   public $automatic_emails;
 
-  function __construct($params = array(
+  /** @var ContainerInterface */
+  private $container;
+  private $renderer;
+
+  private $wp;
+
+  function __construct($params = [
     'file' => '',
-    'version' => '1.0.0'
-  )) {
+    'version' => '1.0.0',
+  ]) {
     Env::init($params['file'], $params['version']);
+    $this->wp = new WPFunctions;
   }
 
   function init() {
-    register_activation_hook(
+    WPFunctions::get()->registerActivationHook(
       Env::$file,
-      array('MailPoet\Premium\Config\Activator', 'activate')
+      ['MailPoet\Premium\Config\Activator', 'activate']
     );
 
-    Hooks::addAction('mailpoet_initialized', array(
+    $this->wp->addAction('mailpoet_initialized', [
       $this,
-      'setup'
-    ));
+      'setup',
+    ]);
   }
 
   function setup() {
+    $this->loadContainer();
     $this->setupLocalizer();
     $this->setupDB();
     $this->maybeDbUpdate();
     $this->setupRenderer();
     $this->setupMenu();
 
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_styles_admin_after',
-      array($this, 'includePremiumStyles')
+      [$this, 'includePremiumStyles']
     );
 
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_scripts_admin_before',
-      array($this, 'includePremiumJavascript')
+      [$this, 'includePremiumJavascript']
     );
 
     $this->setupNewsletterExtraData();
@@ -59,9 +68,9 @@ class Initializer {
     $this->setupCampaignStats();
     $this->setupAutomaticEmails();
 
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_setup_reset',
-      array('MailPoet\Premium\Config\Activator', 'reset')
+      ['MailPoet\Premium\Config\Activator', 'reset']
     );
 
     $this->setupHooks();
@@ -69,13 +78,13 @@ class Initializer {
 
   function maybeDbUpdate() {
     try {
-      $current_db_version = Setting::getValue('premium_db_version');
-    } catch(\Exception $e) {
+      $current_db_version = $this->container->get(SettingsController::class)->get('premium_db_version');
+    } catch (\Exception $e) {
       $current_db_version = null;
     }
 
     // if current db version and plugin version differ
-    if(version_compare($current_db_version, Env::$version) !== 0) {
+    if (version_compare($current_db_version, Env::$version) !== 0) {
       Activator::activate();
     }
   }
@@ -85,10 +94,12 @@ class Initializer {
     $database->init();
   }
 
+  function loadContainer() {
+    $this->container = ContainerWrapper::getInstance(WP_DEBUG)->getPremiumContainer();
+  }
+
   function setupRenderer() {
-    $caching = !WP_DEBUG;
-    $debugging = WP_DEBUG;
-    $this->renderer = new Renderer($caching, $debugging);
+    $this->renderer = $this->container->get(Renderer::class);
   }
 
   function setupLocalizer() {
@@ -97,19 +108,10 @@ class Initializer {
   }
 
   function setupMenu() {
-    $caching = !WP_DEBUG;
-    $debugging = WP_DEBUG;
-    $access_control = new AccessControl();
-    $renderer = new \MailPoet\Config\Renderer($caching, $debugging);
-    $this->menu = new Menu(
-      $this->renderer,
-      $access_control,
-      new \MailPoet\Config\Menu($renderer, $access_control)
-    );
-
-    Hooks::addAction(
+    $this->menu = $this->container->get(Menu::class);
+    $this->wp->addAction(
       'mailpoet_menu_after_lists',
-      array($this->menu, 'afterLists')
+      [$this->menu, 'afterLists']
     );
   }
 
@@ -118,14 +120,14 @@ class Initializer {
     $automatic_emails->init();
     $this->automatic_emails = $automatic_emails->getAutomaticEmails();
 
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_newsletters_translations_after',
-      array($this, 'includeAutomaticEmailsData')
+      [$this, 'includeAutomaticEmailsData']
     );
 
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_newsletter_editor_after_javascript',
-      array($this, 'includeAutomaticEmailsData')
+      [$this, 'includeAutomaticEmailsData']
     );
   }
 
@@ -136,16 +138,16 @@ class Initializer {
   function setupGATracking() {
     GATracking::init();
 
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_newsletters_translations_after',
-      array($this, 'newslettersGATracking')
+      [$this, 'newslettersGATracking']
     );
   }
 
   function setupCampaignStats() {
-    Hooks::addAction(
+    $this->wp->addAction(
       'mailpoet_newsletters_translations_after',
-      array($this, 'newslettersCampaignStats')
+      [$this, 'newslettersCampaignStats']
     );
   }
 
@@ -155,11 +157,11 @@ class Initializer {
 
   function newslettersCampaignStats() {
     // shortcode URLs to substitute with user-friendly names
-    $data['shortcode_links'] = array(
-      '[link:subscription_unsubscribe_url]' => __('Unsubscribe link', 'mailpoet-premium'),
-      '[link:subscription_manage_url]' => __('Manage subscription link', 'mailpoet-premium'),
-      '[link:newsletter_view_in_browser_url]' => __('View in browser link', 'mailpoet-premium'),
-    );
+    $data['shortcode_links'] = [
+      '[link:subscription_unsubscribe_url]' => WPFunctions::get()->__('Unsubscribe link', 'mailpoet-premium'),
+      '[link:subscription_manage_url]' => WPFunctions::get()->__('Manage subscription link', 'mailpoet-premium'),
+      '[link:newsletter_view_in_browser_url]' => WPFunctions::get()->__('View in browser link', 'mailpoet-premium'),
+    ];
 
     echo $this->renderer->render('newsletters/campaign_stats.html', $data);
   }
@@ -173,9 +175,9 @@ class Initializer {
   }
 
   function includeAutomaticEmailsData() {
-    $data = array(
-      'automatic_emails' => $this->automatic_emails
-    );
+    $data = [
+      'automatic_emails' => $this->automatic_emails,
+    ];
 
     echo $this->renderer->render('newsletters/automatic_emails.html', $data);
   }

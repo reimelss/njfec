@@ -8,8 +8,6 @@ use MailPoet\Mailer\Methods\ErrorMappers\SendGridMapper;
 use MailPoet\Mailer\Methods\ErrorMappers\SMTPMapper;
 use MailPoet\Settings\SettingsController;
 
-if (!defined('ABSPATH')) exit;
-
 class Mailer {
   public $mailer_config;
   public $sender;
@@ -35,7 +33,7 @@ class Mailer {
     $this->mailer_instance = $this->buildMailer();
   }
 
-  function send($newsletter, $subscriber, $extra_params = array()) {
+  function send($newsletter, $subscriber, $extra_params = []) {
     $subscriber = $this->formatSubscriberNameAndEmailAddress($subscriber);
     return $this->mailer_instance->send($newsletter, $subscriber, $extra_params);
   }
@@ -121,14 +119,14 @@ class Mailer {
       if (empty($sender['address'])) throw new \Exception(__('Sender name and email are not configured.', 'mailpoet'));
     }
     $from_name = $this->encodeAddressNamePart($sender['name']);
-    return array(
+    return [
       'from_name' => $from_name,
       'from_email' => $sender['address'],
-      'from_name_email' => sprintf('%s <%s>', $from_name, $sender['address'])
-    );
+      'from_name_email' => sprintf('%s <%s>', $from_name, $sender['address']),
+    ];
   }
 
-  function getReplyToNameAndAddress($reply_to = array()) {
+  function getReplyToNameAndAddress($reply_to = []) {
     if (!$reply_to) {
       $reply_to = $this->settings->get('reply_to');
       $reply_to['name'] = (!empty($reply_to['name'])) ?
@@ -142,11 +140,11 @@ class Mailer {
       $reply_to['address'] = $this->sender['from_email'];
     }
     $reply_to_name = $this->encodeAddressNamePart($reply_to['name']);
-    return array(
+    return [
       'reply_to_name' => $reply_to_name,
       'reply_to_email' => $reply_to['address'],
-      'reply_to_name_email' => sprintf('%s <%s>', $reply_to_name, $reply_to['address'])
-    );
+      'reply_to_name_email' => sprintf('%s <%s>', $reply_to_name, $reply_to['address']),
+    ];
   }
 
   function getReturnPathAddress($return_path) {
@@ -154,7 +152,7 @@ class Mailer {
       $return_path :
       $this->settings->get('bounce.address');
   }
-  
+
   /**
    * @param  \MailPoet\Models\Subscriber|array $subscriber
    */
@@ -191,7 +189,7 @@ class Mailer {
 
   static function formatMailerSendSuccessResult() {
     return [
-      'response' => true
+      'response' => true,
     ];
   }
 }

@@ -1,9 +1,168 @@
 Plugin Name: WPMU DEV Dashboard
-Author: Aaron Edwards, Philipp Stracker
+Author: Aaron Edwards
 
 Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
+
+4.7.1.1 - 05/09/2019 - Aaron, Hendrawan
+----------------------------------------------------------------------
+- Fix: PHP notices on admin pages
+
+4.7.1 - 04/10/2019 - Aaron, Hendrawan
+----------------------------------------------------------------------
+- Fix: WPMU DEV Auto Install Compatibility
+
+4.7 - 10/19/2018 - Aaron, Leighton, Hendrawan
+----------------------------------------------------------------------
+- Improvement: Brand new UI/UX
+- Improvement: Better Onboarding process
+- Add: Displayed analytics metrics configuration
+
+4.6.1 - 02/26/2019 - Aaron, Hendrawan
+----------------------------------------------------------------------
+- Fix: Automate WP core update from 5.0.x to 5.1+
+
+4.6 - 09/24/2018 - Aaron, Leighton, Hendrawan
+----------------------------------------------------------------------
+- Add: new whitelabeled analytics service!
+- Add: new white-label WPMU DEV plugins settings
+- Improvement: Only redirect to login when activating the Dashboard plugin itself
+- Improvement: Accessibility for login screen
+
+4.5.2 - 04/26/2018 - Aaron
+----------------------------------------------------------------------
+- Important security fix for staff remote logins and protect against timing attacks (props Steve Truman @a3rev)
+- Fix a rare fatal error during activation in some WP installs
+- Fix a missing string in translations
+
+4.5.1 - 04/11/2018 - Aaron
+----------------------------------------------------------------------
+- Fix PHP 5.2 compatibility issue
+
+4.5 - 04/10/2018 - Aaron
+----------------------------------------------------------------------
+- Support plugin icons in update-core.php list
+- Add support for Hub upgrades of premium plugins that use the EDD updater class
+- Make support search open in a new tab
+- Fix bugs causing dash notice to show multiple times (only display the latest version)
+- Optimize and fix encoding issues when saving/caching options
+- Separate get latest projects and Hub sync API calls for efficiency
+- Lower server and API load by preventing duplicate Hub sync calls if not necessary
+- Implement exponential backoff in API calls in case of API outages
+- Retire themes sections
+- Update login error messages
+- Fix update links in plugin popovers
+- Various text changes and updates
+- Fix bug where activate button could show when plugin already activated
+- Fix missing or incorrect configure links in multisite plugin info popovers
+- Logout and remove site from Hub when deleting/uninstalling the plugin
+- Remove site from Hub immediately when logging out manually
+- Fix compatibility issue with Ultimate Branding - Admin Help Content module
+
+4.4 - 9/21/2017 - Aaron & Alex
+----------------------------------------------------------------------
+- Add WP core upgrade support from Hub/Automate
+- Improve Hub remote call error responses
+- Switch background Dashboard autoupdates to use core method
+- Fix some syncing cache issues delaying the detection of available updates
+- Accessibility improvements for screenreaders
+
+4.3.2 - 7/31/2017 - Aaron & Ricardo
+----------------------------------------------------------------------
+- Make Hub initiated actions faster/more efficient by only syncing details when necessary
+- Improve debug log detail for Hub initiated actions
+- Show detailed error messages on local install failures
+- Fix various responsive UI style issues
+- Fix broken search box on Support page
+- Various spelling and text fixes
+
+4.3.1 - 6/1/2017 - Aaron & Ricardo
+----------------------------------------------------------------------
+- Redesign of the login process, headers, and home page UX
+- Add System Info tab to login page for debugging help
+- Allow HTML in features lists (Upfront Builder link)
+- Fix System info back button link
+- Text adjustments
+
+4.3 - 1/30/2017 - Aaron
+----------------------------------------------------------------------
+- Full rewrite of remote API, to support Update/Install/Activate/Deactivate/Delete from hub
+- Register all third party plugins/themes with Hub even if they don't have available updates
+- Internal API for other WPMU DEV plugins to register their own Hub actions
+- Support updates and installs from Hub on WP Engine hosting
+- Improve error detection and messages on update/install
+- Fix wrong date string on support access box and last refreshed message
+- Fix style issues on various screens
+- Fix possible infinite loop when resetting api key remotely
+
+4.2.1 - 12/15/2016 - Aaron
+----------------------------------------------------------------------
+- Comprehensive support for RTL languages
+- Fix missing strings in textdomain - props @Julian
+- Fix changelog showing error when non-allowed user clicks the link on plugins list
+- Remove broken more info links on update core list for non-allowed users
+- Bypass API cache when logging in to avoid hub sync issues
+- Fix WooCommerce notices showing up on Dashboard pages with crazy styles
+- Fix various style issues
+
+4.2 - 09/28/2016 - Aaron
+----------------------------------------------------------------------
+- Add support for wp.org repo updates from Hub!
+- Revoke outstanding support access when logging out
+- Optimize remote data refresh calls and duplicate queries
+- Add clearer error messages when logging into localhost installs
+- Don't show update notices on subsite plugin list pages in multisite, like core
+- Fix style issues of update notices for activated plugin in core plugins list
+- Fix premium/wp.org theme slug conflicts
+- Remove premium/wp.org slug conflicts for Hub wp.org updates
+- Update WPMU DEV urls
+
+4.1.2 - 08/17/2016 - Aaron
+----------------------------------------------------------------------
+- WP 4.6 compatibility fixes
+- Add support for upcoming Upfront Builder plugin (dependency management)
+- Fix PHP7 compatibility issue on system info page
+- Use new changelog on single site themes page
+
+4.1.1 - 07/21/2016 - Aaron
+----------------------------------------------------------------------
+- Enable shiny updates on core plugins list for WPMU DEV plugins
+- Fix support search location and icon click
+- Fix core update messages not being customized with our changelog
+- Fix WPMU DEV plugins on core updates page not showing WP version compatibility
+- Fix missing Upfront changelogs on Network Themes list
+- Show changelog when updating Upfront on WPMU DEV Dashboard->Themes page
+- Fix date time display when a geographic timezone is selected in settings instead of offset
+- Fix out of date upgrade membership urls
+- Change popular plugins widget selection criteria
+- Show all products to legacy single members
+- Fix available updates not showing for single members for products outside their membership
+- Fix updates not showing in core areas when logged out of Dashboard
+- Fix theme details button for active theme popup self closing in single site
+- Make popup close buttons accessible to screen readers
+- Fix false permissions error when updating WPMU DEV Dashboard on WPMU DEV Dash->Plugins list
+- Fix redirect to login page on Dashboard activation
+- Update core available update count bubbles after updating products in the Dashboard
+- Fix broken "Requires xxx" messages on incompatible plugins
+
+4.1.0 - 06/06/2016 - Philipp
+----------------------------------------------------------------------
+Enables the brand new "Update All" function in Hub! Also includes several small bugfixes and improvements.
+
+- Add support for the lightning fast "Update All" feature in Hub!
+- Add entry for WPMU DEV Dashboard to the "My Sites" menu in multisite installations.
+- Improved default display order of plugins and themes in WPMUDEV pages.
+- Improved plugin activation refreshes the page to display the plugin menu item.
+- Disable auto-update function for legacy plugins and themes that cannot be updated via the WPMU DEV Dashboard.
+- Fix remote access expiration time to use timezone defined by WordPress.
+- Fix date formatting issues in the Support tab, that displayed a weird expiration time for support access.
+- Fix a PHP warning / missing details inside the "Update Theme/Plugin" popup
+- Fix some links that point to the WPMU DEV website.
+- Fix display of special characters inside Notes-field for support access.
+- Fix rare fatal error about `Call function has_cap() on boolean` during plugin activation.
+- A handful of other small improvements, like fixing typos
+- Improve action syncing with Hub when performed on core pages
 
 4.0.9 - 3/28/2016 - Philipp
 ----------------------------------------------------------------------
@@ -266,7 +425,7 @@ Change Log:
 3.1.2 - 6/23/2012
 ----------------------------------------------------------------------
 - Added filter logic to convert images and JS to use https when admin area is using ssl.
-- Modify permissions logic for admin menus. This should work correctly when the site has blocked install/update perms on plugins and themes. Like when setting DISALLOW_FILE_MODES in wp-config.php the Plugins and Themes sections are not displayed to the user. 
+- Modify permissions logic for admin menus. This should work correctly when the site has blocked install/update perms on plugins and themes. Like when setting DISALLOW_FILE_MODES in wp-config.php the Plugins and Themes sections are not displayed to the user.
 - Improve handling of reset API keys
 - Fix permissions bug for some foreign language WP distributions
 
@@ -357,6 +516,3 @@ Added option to disable admin notices.
 1.0.0 - 12/15/2009
 ----------------------------------------------------------------------
 Initial Release.
-
-
-306042-1463065670-au

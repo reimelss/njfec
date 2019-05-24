@@ -3,7 +3,7 @@ namespace MailPoet\Premium\Config;
 
 use MailPoet\Config\Env as ParentEnv;
 
-if(!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) exit;
 
 class Database {
   function init() {
@@ -11,7 +11,7 @@ class Database {
   }
 
   function defineTables() {
-    if(!defined('MP_NEWSLETTER_EXTRA_DATA_TABLE')) {
+    if (!defined('MP_NEWSLETTER_EXTRA_DATA_TABLE')) {
       $newsletter_extra_data = ParentEnv::$db_prefix . 'premium_newsletter_extra_data';
       $dynamic_segment_filters = ParentEnv::$db_prefix . 'dynamic_segment_filters';
 

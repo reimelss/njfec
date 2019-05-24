@@ -33,7 +33,7 @@ class WooCommerceProduct implements Filter {
       "postmeta.meta_key = '_customer_user' AND " . Subscriber::$_table . '.wp_user_id=postmeta.meta_value',
       'postmeta'
     );
-    $orm->join($wpdb->prefix . 'woocommerce_order_items', array('postmeta.post_id', '=', 'items.order_id'), 'items');
+    $orm->join($wpdb->prefix . 'woocommerce_order_items', ['postmeta.post_id', '=', 'items.order_id'], 'items');
     $orm->rawJoin(
       'INNER JOIN ' . $wpdb->prefix . 'woocommerce_order_itemmeta',
       "itemmeta.order_item_id=items.order_item_id 
@@ -46,11 +46,11 @@ class WooCommerceProduct implements Filter {
   }
 
   function toArray() {
-    return array(
+    return [
       'action' => WooCommerceProduct::ACTION_PRODUCT,
       'product_id' => $this->product_id,
       'connect' => $this->connect,
       'segmentType' => WooCommerceProduct::SEGMENT_TYPE,
-    );
+    ];
   }
 }

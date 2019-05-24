@@ -17,14 +17,19 @@ class Changelog {
   /** @var Helper */
   private $wooCommerceHelper;
 
+  /** @var Url */
+  private $url_helper;
+
   function __construct(
     SettingsController $settings,
     WPFunctions $wp,
-    Helper $wooCommerceHelper
+    Helper $wooCommerceHelper,
+    Url $url_helper
   ) {
     $this->wooCommerceHelper = $wooCommerceHelper;
     $this->settings = $settings;
     $this->wp = $wp;
+    $this->url_helper = $url_helper;
   }
 
   function init() {
@@ -46,7 +51,7 @@ class Changelog {
 
     WPFunctions::get()->addAction(
       'admin_init',
-      array($this, 'check')
+      [$this, 'check']
     );
   }
 
@@ -57,14 +62,12 @@ class Changelog {
       $this->setupNewInstallation();
       $this->checkWelcomeWizard();
     }
-    if ($this->settings->get('woo_commerce_list_sync_enabled')) {
-      $this->checkWooCommerceListImportPage();
-    }
+    $this->checkWooCommerceListImportPage();
   }
 
   private function checkMp2Migration($version) {
     $mp2_migrator = new MP2Migrator();
-    if (!in_array($_GET['page'], array('mailpoet-migration', 'mailpoet-settings')) && $mp2_migrator->isMigrationStartedAndNotCompleted()) {
+    if (!in_array($_GET['page'], ['mailpoet-migration', 'mailpoet-settings']) && $mp2_migrator->isMigrationStartedAndNotCompleted()) {
       // Force the redirection if the migration has started but is not completed
       return $this->terminateWithRedirect($this->wp->adminUrl('admin.php?page=mailpoet-migration'));
     }
@@ -76,7 +79,7 @@ class Changelog {
 
   private function setupNewInstallation() {
     // ensure there was no MP2 migration (migration resets $version so it must be checked)
-    if ($this->settings->get('mailpoet_migration_started') === null) {
+    if ($this->settings->get(MP2Migrator::MIGRATION_STARTED_SETTING_KEY) === null) {
       $this->settings->set('show_intro', true);
     }
     $this->settings->set('show_congratulate_after_first_newsletter', true);
@@ -96,18 +99,18 @@ class Changelog {
     }
     if (
       !in_array($_GET['page'], ['mailpoet-woocommerce-list-import', 'mailpoet-welcome-wizard', 'mailpoet-migration'])
-      && !$this->settings->get('woocommerce.import_screen_displayed')
+      && !$this->settings->get('woocommerce_import_screen_displayed')
       && $this->wooCommerceHelper->isWooCommerceActive()
       && $this->wooCommerceHelper->getOrdersCount() >= 1
       && $this->wp->currentUserCan('administrator')
     ) {
-      Url::redirectTo($this->wp->adminUrl('admin.php?page=mailpoet-woocommerce-list-import'));
+      $this->url_helper->redirectTo($this->wp->adminUrl('admin.php?page=mailpoet-woocommerce-list-import'));
     }
   }
 
   private function terminateWithRedirect($redirect_url) {
     // save version number
     $this->settings->set('version', Env::$version);
-    Url::redirectWithReferer($redirect_url);
+    $this->url_helper->redirectWithReferer($redirect_url);
   }
 }

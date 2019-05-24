@@ -11,13 +11,14 @@ use MailPoet\Premium\DynamicSegments\Filters\Filter;
  * @property string $description
  * @property string $created_at
  * @property string $updated_at
- */
+ */use MailPoet\WP\Functions as WPFunctions;
+
 class DynamicSegment extends MailPoetSegment {
 
   const TYPE_DYNAMIC = 'dynamic';
 
   /** @var Filter[] */
-  private $filters = array();
+  private $filters = [];
 
   /**
    * @return Filter[]
@@ -49,31 +50,31 @@ class DynamicSegment extends MailPoetSegment {
       ->findMany();
   }
 
-  static function listingQuery(array $data = array()) {
+  static function listingQuery(array $data = []) {
     $query = self::select('*');
     $query->where('type', DynamicSegment::TYPE_DYNAMIC);
-    if(isset($data['group'])) {
+    if (isset($data['group'])) {
       $query->filter('groupBy', $data['group']);
     }
-    if(isset($data['search'])) {
+    if (isset($data['search'])) {
       $query->filter('search', $data['search']);
     }
     return $query;
   }
 
   static function groups() {
-    return array(
-      array(
+    return [
+      [
         'name' => 'all',
-        'label' => __('All', 'mailpoet-premium'),
-        'count' => DynamicSegment::getPublished()->where('type', DynamicSegment::TYPE_DYNAMIC)->count()
-      ),
-      array(
+        'label' => WPFunctions::get()->__('All', 'mailpoet-premium'),
+        'count' => DynamicSegment::getPublished()->where('type', DynamicSegment::TYPE_DYNAMIC)->count(),
+      ],
+      [
         'name' => 'trash',
-        'label' => __('Trash', 'mailpoet-premium'),
-        'count' => parent::getTrashed()->where('type', DynamicSegment::TYPE_DYNAMIC)->count()
-      )
-    );
+        'label' => WPFunctions::get()->__('Trash', 'mailpoet-premium'),
+        'count' => parent::getTrashed()->where('type', DynamicSegment::TYPE_DYNAMIC)->count(),
+      ],
+    ];
   }
 
   function delete() {
@@ -84,30 +85,30 @@ class DynamicSegment extends MailPoetSegment {
   static function bulkTrash($orm) {
     $count = parent::bulkAction($orm, function($ids) {
       $placeholders = join(',', array_fill(0, count($ids), '?'));
-      DynamicSegment::rawExecute(join(' ', array(
-        'UPDATE `' .  DynamicSegment::$_table . '`',
+      DynamicSegment::rawExecute(join(' ', [
+        'UPDATE `' . DynamicSegment::$_table . '`',
         'SET `deleted_at` = NOW()',
-        'WHERE `id` IN (' . $placeholders . ')'
-      )), $ids);
+        'WHERE `id` IN (' . $placeholders . ')',
+      ]), $ids);
     });
 
-    return array('count' => $count);
+    return ['count' => $count];
   }
 
   static function bulkDelete($orm) {
     $count = parent::bulkAction($orm, function($ids) {
       $placeholders = join(',', array_fill(0, count($ids), '?'));
-      DynamicSegmentFilter::rawExecute(join(' ', array(
+      DynamicSegmentFilter::rawExecute(join(' ', [
         'DELETE FROM `' . DynamicSegmentFilter::$_table . '`',
-        'WHERE `segment_id` IN (' . $placeholders . ')'
-      )), $ids);
-      DynamicSegment::rawExecute(join(' ', array(
+        'WHERE `segment_id` IN (' . $placeholders . ')',
+      ]), $ids);
+      DynamicSegment::rawExecute(join(' ', [
         'DELETE FROM `' . DynamicSegment::$_table . '`',
-        'WHERE `id` IN (' . $placeholders . ')'
-      )), $ids);
+        'WHERE `id` IN (' . $placeholders . ')',
+      ]), $ids);
     });
 
-    return array('count' => $count);
+    return ['count' => $count];
   }
 
 }

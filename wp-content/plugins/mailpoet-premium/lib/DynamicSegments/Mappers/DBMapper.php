@@ -32,17 +32,17 @@ class DBMapper {
    * @return DynamicSegment[]
    */
   function mapSegments(array $segments_data, array $filters_data) {
-    $result = array();
-    foreach($segments_data as $segment_data) {
+    $result = [];
+    foreach ($segments_data as $segment_data) {
       $result[] = $this->mapSegment($segment_data, $filters_data);
     }
     return $result;
   }
 
   private function getFilters($segment_id, $all_filters) {
-    $result = array();
-    foreach($all_filters as $filter) {
-      if($filter->segment_id === $segment_id) {
+    $result = [];
+    foreach ($all_filters as $filter) {
+      if ($filter->segment_id === $segment_id) {
         $result[] = $this->createFilter($filter->filter_data);
       }
     }
@@ -55,14 +55,14 @@ class DBMapper {
    * @throws InvalidSegmentTypeException
    */
   private function createFilter(array $data) {
-    switch($this->getSegmentType($data)) {
+    switch ($this->getSegmentType($data)) {
       case 'userRole':
         if (!$data['wordpressRole']) throw new InvalidSegmentTypeException('Missing role');
         return new UserRole($data['wordpressRole'], 'and');
       case 'email':
         return new EmailAction($data['action'], $data['newsletter_id'], $data['link_id']);
       case 'woocommerce':
-        if($data['action'] === WooCommerceProduct::ACTION_PRODUCT) {
+        if ($data['action'] === WooCommerceProduct::ACTION_PRODUCT) {
           return new WooCommerceProduct($data['product_id']);
         }
         return new WooCommerceCategory($data['category_id']);
@@ -72,12 +72,12 @@ class DBMapper {
   }
 
   /**
-   * @param $data
+   * @param array $data
    * @return string
    * @throws InvalidSegmentTypeException
    */
-  private function getSegmentType($data) {
-    if(!isset($data['segmentType'])) {
+  private function getSegmentType(array $data) {
+    if (!isset($data['segmentType'])) {
       throw new InvalidSegmentTypeException('Segment type is not set');
     }
     return $data['segmentType'];

@@ -6,16 +6,18 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'MailPoetGenerated\\PremiumCachedContainer' => $baseDir . '/generated/PremiumCachedContainer.php',
     'MailPoet\\Premium\\API\\JSON\\v1\\AutomaticEmails' => $baseDir . '/lib/API/JSON/v1/AutomaticEmails.php',
     'MailPoet\\Premium\\API\\JSON\\v1\\DynamicSegments' => $baseDir . '/lib/API/JSON/v1/DynamicSegments.php',
     'MailPoet\\Premium\\API\\JSON\\v1\\NewsletterLinks' => $baseDir . '/lib/API/JSON/v1/NewsletterLinks.php',
     'MailPoet\\Premium\\API\\JSON\\v1\\Stats' => $baseDir . '/lib/API/JSON/v1/Stats.php',
+    'MailPoet\\Premium\\Analytics\\Reporter' => $baseDir . '/lib/Analytics/Reporter.php',
     'MailPoet\\Premium\\AutomaticEmails\\AutomaticEmails' => $baseDir . '/lib/AutomaticEmails/AutomaticEmails.php',
     'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\AbandonedCart' => $baseDir . '/lib/AutomaticEmails/WooCommerce/Events/AbandonedCart.php',
-    'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\BigSpender' => $baseDir . '/lib/AutomaticEmails/WooCommerce/Events/BigSpender.php',
     'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\FirstPurchase' => $baseDir . '/lib/AutomaticEmails/WooCommerce/Events/FirstPurchase.php',
     'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\PurchasedInCategory' => $baseDir . '/lib/AutomaticEmails/WooCommerce/Events/PurchasedInCategory.php',
     'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Events\\PurchasedProduct' => $baseDir . '/lib/AutomaticEmails/WooCommerce/Events/PurchasedProduct.php',
+    'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\Helper' => $baseDir . '/lib/AutomaticEmails/WooCommerce/Helper.php',
     'MailPoet\\Premium\\AutomaticEmails\\WooCommerce\\WooCommerce' => $baseDir . '/lib/AutomaticEmails/WooCommerce/WooCommerce.php',
     'MailPoet\\Premium\\Config\\Activator' => $baseDir . '/lib/Config/Activator.php',
     'MailPoet\\Premium\\Config\\Database' => $baseDir . '/lib/Config/Database.php',
@@ -27,6 +29,7 @@ return array(
     'MailPoet\\Premium\\Config\\Migrator' => $baseDir . '/lib/Config/Migrator.php',
     'MailPoet\\Premium\\Config\\Populator' => $baseDir . '/lib/Config/Populator.php',
     'MailPoet\\Premium\\Config\\Renderer' => $baseDir . '/lib/Config/Renderer.php',
+    'MailPoet\\Premium\\DI\\ContainerConfigurator' => $baseDir . '/lib/DI/ContainerConfigurator.php',
     'MailPoet\\Premium\\DynamicSegments\\Exceptions\\ErrorSavingException' => $baseDir . '/lib/DynamicSegments/Exceptions/ErrorSavingException.php',
     'MailPoet\\Premium\\DynamicSegments\\Exceptions\\InvalidSegmentTypeException' => $baseDir . '/lib/DynamicSegments/Exceptions/InvalidSegmentTypeException.php',
     'MailPoet\\Premium\\DynamicSegments\\Filters\\EmailAction' => $baseDir . '/lib/DynamicSegments/Filters/EmailAction.php',

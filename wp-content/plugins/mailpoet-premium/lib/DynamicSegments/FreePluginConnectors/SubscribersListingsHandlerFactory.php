@@ -9,10 +9,9 @@ use MailPoet\Premium\Models\DynamicSegment;
 class SubscribersListingsHandlerFactory {
 
   function get(Segment $segment, $data) {
-    if($segment->type === DynamicSegment::TYPE_DYNAMIC) {
-      $listing = new Handler('\MailPoet\Premium\Models\SubscribersInDynamicSegment', $data);
-
-      return $listing_data = $listing->get();
+    if ($segment->type === DynamicSegment::TYPE_DYNAMIC) {
+      $listing = new Handler();
+      return $listing_data = $listing->get('\MailPoet\Premium\Models\SubscribersInDynamicSegment', $data);
     }
   }
 }

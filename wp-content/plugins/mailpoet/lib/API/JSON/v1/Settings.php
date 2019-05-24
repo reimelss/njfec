@@ -11,6 +11,7 @@ use MailPoet\Models\ScheduledTask;
 use MailPoet\Services\Bridge;
 use MailPoet\Settings\SettingsController;
 use MailPoet\WP\Functions as WPFunctions;
+use MailPoet\Models\Form;
 
 if (!defined('ABSPATH')) exit;
 
@@ -19,9 +20,9 @@ class Settings extends APIEndpoint {
   /** @var SettingsController */
   private $settings;
 
-  public $permissions = array(
-    'global' => AccessControl::PERMISSION_MANAGE_SETTINGS
-  );
+  public $permissions = [
+    'global' => AccessControl::PERMISSION_MANAGE_SETTINGS,
+  ];
 
   function __construct(SettingsController $settings) {
     $this->settings = $settings;
@@ -31,15 +32,17 @@ class Settings extends APIEndpoint {
     return $this->successResponse($this->settings->getAll());
   }
 
-  function set($settings = array()) {
+  function set($settings = []) {
     if (empty($settings)) {
       return $this->badRequest(
-        array(
+        [
           APIError::BAD_REQUEST =>
-            WPFunctions::get()->__('You have not specified any settings to be saved.', 'mailpoet')
-        ));
+            WPFunctions::get()->__('You have not specified any settings to be saved.', 'mailpoet'),
+        ]);
     } else {
       $original_inactivation_interval = (int)$this->settings->get('deactivate_subscriber_after_inactive_days');
+      // Will be uncommented on task [MAILPOET-1998]
+      // $signup_confirmation = $this->settings->get('signup_confirmation.enabled');
       foreach ($settings as $name => $value) {
         $this->settings->set($name, $value);
       }
@@ -50,6 +53,10 @@ class Settings extends APIEndpoint {
       }
       $bridge = new Bridge();
       $bridge->onSettingsSave($settings);
+      // Will be uncommented on task [MAILPOET-1998]
+      // if ($signup_confirmation !== $this->settings->get('signup_confirmation.enabled')) {
+      //   Form::updateSuccessMessages();
+      // }
       return $this->successResponse($this->settings->getAll());
     }
   }

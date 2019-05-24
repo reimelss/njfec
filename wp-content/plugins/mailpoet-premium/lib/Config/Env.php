@@ -3,7 +3,8 @@ namespace MailPoet\Premium\Config;
 
 use MailPoet\Config\Env as ParentEnv;
 
-if(!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) exit;
+use MailPoet\WP\Functions as WPFunctions;
 
 class Env {
   static $version;
@@ -23,14 +24,18 @@ class Env {
     self::$file = $file;
     self::$path = dirname(self::$file);
     self::$plugin_name = 'mailpoet-premium';
-    self::$views_path = self::$path.'/views';
-    self::$assets_path = self::$path.'/assets';
-    self::$assets_url = plugins_url('/assets', $file);
+    self::$views_path = self::$path . '/views';
+    self::$assets_path = self::$path . '/assets';
+    self::$assets_url = WPFunctions::get()->pluginsUrl('/assets', $file);
     // Use MailPoet Free's upload dir to prevent it from being altered
     // due to late Premium initialization, just replace the plugin name at the end
-    self::$temp_path = preg_replace('/'. ParentEnv::$plugin_name . '$/', self::$plugin_name, ParentEnv::$temp_path);
-    self::$cache_path = self::$temp_path.'/cache';
-    self::$languages_path = self::$path.'/lang';
-    self::$lib_path = self::$path.'/lib';
+    self::$temp_path = preg_replace('/' . ParentEnv::$plugin_name . '$/', self::$plugin_name, ParentEnv::$temp_path);
+    if (is_string(self::$temp_path)) {
+      self::$cache_path = self::$temp_path . '/cache';
+    } else {
+      throw new \Exception('Cache folder is invalid');
+    }
+    self::$languages_path = self::$path . '/lang';
+    self::$lib_path = self::$path . '/lib';
   }
 }

@@ -2,11 +2,12 @@
 
 namespace MailPoet\Premium\Config;
 
-use MailPoet\Models\Setting;
+use MailPoet\Settings\SettingsController;
 
-if(!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) exit;
 
 class Activator {
+
   static function activate() {
     $migrator = new Migrator();
     $migrator->up();
@@ -14,7 +15,8 @@ class Activator {
     $populator = new Populator();
     $populator->up();
 
-    Setting::setValue('premium_db_version', Env::$version);
+    $settings = new SettingsController();
+    $settings->set('premium_db_version', Env::$version);
   }
 
   static function deactivate() {

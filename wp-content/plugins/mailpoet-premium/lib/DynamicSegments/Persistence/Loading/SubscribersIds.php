@@ -17,10 +17,10 @@ class SubscribersIds {
    */
   function load(DynamicSegment $dynamic_segment, $limit_to_subscribers_ids = null) {
     $orm = Subscriber::selectExpr(Subscriber::$_table . '.id');
-    foreach($dynamic_segment->getFilters() as $filter) {
+    foreach ($dynamic_segment->getFilters() as $filter) {
       $orm = $filter->toSql($orm);
     }
-    if($limit_to_subscribers_ids) {
+    if ($limit_to_subscribers_ids) {
       $orm->whereIn(Subscriber::$_table . '.id', $limit_to_subscribers_ids);
     }
     return $orm->findMany();

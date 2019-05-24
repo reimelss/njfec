@@ -1,10 +1,10 @@
 === MailPoet 3 - Premium ===
 Contributors: mailpoet, wysija
 Tags: newsletter, email, welcome email, post notification, autoresponder, mailchimp, signup, smtp
-Requires at least: 4.6
-Tested up to: 4.9
+Requires at least: 4.7
+Tested up to: 5.1
 Requires PHP: 5.6
-Stable tag: 3.0.32
+Stable tag: 3.0.52
 Create and send beautiful emails and newsletters from WordPress.
 
 == Description ==
@@ -83,6 +83,64 @@ Our [support site](https://docs.mailpoet.com/) has plenty of articles. You can w
 5. Importing subscribers with a CSV or from MailChimp.
 
 == Changelog ==
+
+= 3.0.52 - 2019-05-21 =
+* Improved: minor changes and fixes.
+
+= 3.0.51 - 2019-05-14 =
+* Added: WooCommerce guest checkout customers can now opt-in to email lists, receive WooCommerce emails.
+
+= 3.0.50 - 2019-04-29 =
+* Fixed: blank newsletter page for users with PHP 7.0.33.
+
+= 3.0.49 - 2019-04-23 =
+* Improved: minor changes and fixes.
+
+= 3.0.48 - 2019-04-16 =
+* Improved: minor changes and fixes.
+
+= 3.0.47 - 2019-04-02 =
+* Improved: minor changes and fixes.
+
+= 3.0.46 - 2019-03-25 =
+* Improved: minor changes and fixes.
+
+
+= 3.0.45 - 2019-03-11 =
+* Improved: minor changes and fixes.
+
+= 3.0.44 - 2019-03-05 =
+* Fixed: Welcome email clicked link stats are properly aggregated.
+
+= 3.0.43 - 2019-02-26 =
+* Improved: minor changes and fixes.
+
+= 3.0.42 - 2019-02-12 =
+* Improved: minor changes and fixes.
+
+= 3.0.41 - 2019-02-05 =
+* Improved: minor changes and fixes.
+
+= 3.0.40 - 2019-01-22 =
+* Improved: minor changes and fixes.
+
+= 3.0.39 - 2019-01-15 =
+* Improved: minor changes and fixes.
+
+= 3.0.38 - 2019-01-08 =
+* Fixed: possible conflict with other plugins using webpack. Thanks, Julien;
+
+= 3.0.37 - 2018-12-18 =
+* Improved: minor changes and fixes.
+
+= 3.0.36 - 2018-12-13 =
+* Improved: minor enhancements.
+
+= 3.0.35 - 2018-12-11 =
+* Improved: the stats page is now mobile-friendly;
+
+= 3.0.33 - 2018-12-05 =
+* Improved: minor enhancements.
 
 = 3.0.32 - 2018-11-27 =
 * Fixed: deleted subscribers are shown as deleted in statistics for clarity.

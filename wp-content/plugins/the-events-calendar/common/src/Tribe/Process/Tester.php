@@ -12,7 +12,7 @@ class Tribe__Process__Tester extends Tribe__Process__Handler {
 	 *
 	 * @var
 	 */
-	protected $transient_name = 'tribe_supports_async_process';
+	const TRANSIENT_NAME = 'tribe_supports_async_process';
 
 	/**
 	 * Handles the process immediately, not in an async manner.
@@ -30,17 +30,6 @@ class Tribe__Process__Tester extends Tribe__Process__Handler {
 		 * so it will do nothing if running in synchronous mode.
 		 */
 		return null;
-	}
-
-	/**
-	 * Returns the name of the transient this class will set as part of its test.
-	 *
-	 * @since 4.7.23
-	 *
-	 * @return string The set transient name.
-	 */
-	public function get_canary_transient() {
-		return $this->transient_name;
 	}
 
 	/**
@@ -68,8 +57,10 @@ class Tribe__Process__Tester extends Tribe__Process__Handler {
 	 * This is the same code as the base WP_Background_Process class.
 	 *
 	 * @since 4.7.23
+	 *
+	 * @param null|array $data_source An optional data source.
 	 */
-	public function maybe_handle() {
+	public function maybe_handle( $data_source = null ) {
 		// Don't lock up other requests while processing
 		session_write_close();
 
@@ -86,9 +77,11 @@ class Tribe__Process__Tester extends Tribe__Process__Handler {
 	 * background processing is supported.
 	 *
 	 * @since 4.7.23
+	 *
+	 * @param array|null $data_source Unused.
 	 */
-	protected function handle() {
-		set_transient( $this->transient_name, 1, HOUR_IN_SECONDS );
+	protected function handle( array $data_source = null ) {
+		set_transient( self::TRANSIENT_NAME, 1, HOUR_IN_SECONDS );
 	}
 
 	/**

@@ -2,7 +2,8 @@
 
 namespace MailPoet\Premium\Config;
 
-if(!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) exit;
+use MailPoet\WP\Functions as WPFunctions;
 
 class Localizer {
   function init() {
@@ -16,11 +17,11 @@ class Localizer {
       Env::$languages_path,
       $this->locale()
     );
-    load_textdomain(Env::$plugin_name, $language_path);
+    WPFunctions::get()->loadTextdomain(Env::$plugin_name, $language_path);
   }
 
   function loadPluginText() {
-    load_plugin_textdomain(
+    WPFunctions::get()->loadPluginTextdomain(
       Env::$plugin_name,
       false,
       dirname(plugin_basename(Env::$file)) . '/lang/'
@@ -28,9 +29,9 @@ class Localizer {
   }
 
   function locale() {
-    $locale = apply_filters(
+    $locale = WPFunctions::get()->applyFilters(
       'plugin_locale',
-      get_locale(),
+      WPFunctions::get()->getLocale(),
       Env::$plugin_name
     );
     return $locale;

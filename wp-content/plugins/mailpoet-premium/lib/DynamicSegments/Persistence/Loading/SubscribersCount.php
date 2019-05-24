@@ -13,8 +13,8 @@ class SubscribersCount {
    * @return int
    */
   function getSubscribersCount(DynamicSegment $dynamic_segment) {
-    $orm = Subscriber::selectExpr('count(distinct ' . Subscriber::$_table .'.id) as cnt');
-    foreach($dynamic_segment->getFilters() as $filter) {
+    $orm = Subscriber::selectExpr('count(distinct ' . Subscriber::$_table . '.id) as cnt');
+    foreach ($dynamic_segment->getFilters() as $filter) {
       $orm = $filter->toSql($orm);
     }
     return $orm->findOne()->cnt;

@@ -117,7 +117,7 @@
           } else {
             $('#settings_stats_notifications_error').hide();
           }
-          <% if is_woocommerce_active and settings.woo_commerce_list_sync_enabled %>
+          <% if is_woocommerce_active %>
             // if WooCommerce opt-in on checkout is enabled but the checkbox message is empty, show an error
             var woocommerce_optin_on_checkout_enabled = $('input[name="woocommerce[optin_on_checkout][enabled]"]:checked').val(),
               woocommerce_optin_on_checkout_message = $('input[name="woocommerce[optin_on_checkout][message]"]').val().trim();
@@ -249,6 +249,8 @@
     var mailpoet_settings_sender_adddress = "<%= settings.sender.address %>";
     var mailpoet_settings_reply_to_name = "<%= settings.reply_to.name %>";
     var mailpoet_settings_reply_to_address = "<%= settings.reply_to.address %>";
+    var mailpoet_settings_signup_confirmation_name = "<%= settings.signup_confirmation.from.name %>";
+    var mailpoet_settings_signup_confirmation_address = "<%= settings.signup_confirmation.from.address %>";
     var mailpoet_installed_at = '<%= settings.installed_at %>';
     var mailpoet_mss_active = <%= json_encode(settings.mta_group == 'mailpoet') %>;
   </script>

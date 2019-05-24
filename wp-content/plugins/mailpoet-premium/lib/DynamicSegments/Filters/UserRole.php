@@ -23,19 +23,19 @@ class UserRole implements Filter {
 
   function toSql(\ORM $orm) {
     global $wpdb;
-    $orm->join($wpdb->users, array('wpusers.id', '=', MP_SUBSCRIBERS_TABLE . '.wp_user_id'), 'wpusers')
-      ->join($wpdb->usermeta, array('wpusers.ID',  '=', 'wpusermeta.user_id'), 'wpusermeta')
+    $orm->join($wpdb->users, ['wpusers.id', '=', MP_SUBSCRIBERS_TABLE . '.wp_user_id'], 'wpusers')
+      ->join($wpdb->usermeta, ['wpusers.ID',  '=', 'wpusermeta.user_id'], 'wpusermeta')
       ->whereEqual('wpusermeta.meta_key', $wpdb->prefix . 'capabilities')
       ->whereLike('wpusermeta.meta_value', '%"' . $this->role . '"%');
     return $orm;
   }
 
   public function toArray() {
-    return array(
+    return [
       'wordpressRole' => $this->role,
       'connect' => $this->connect,
       'segmentType' => UserRole::SEGMENT_TYPE,
-    );
+    ];
   }
 
   function getRole() {

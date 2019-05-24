@@ -34,25 +34,25 @@ class AddToSubscribersFilters {
   }
 
   private function buildResult($dynamic_segments) {
-    $result = array();
-    foreach($dynamic_segments as $dynamic_segment) {
-      $result[] = array(
+    $result = [];
+    foreach ($dynamic_segments as $dynamic_segment) {
+      $result[] = [
         'value' => $dynamic_segment->id,
         'label' => sprintf(
           '%s (%s)',
           $dynamic_segment->name,
           number_format($this->subscribersCountLoader->getSubscribersCount($dynamic_segment))
         ),
-      );
+      ];
     }
     return $result;
   }
 
   private function sort($segment_filters) {
-    $special_segment_filters = array();
-    $segments = array();
-    foreach($segment_filters as $segment_filter) {
-      if(is_numeric($segment_filter['value'])) {
+    $special_segment_filters = [];
+    $segments = [];
+    foreach ($segment_filters as $segment_filter) {
+      if (is_numeric($segment_filter['value'])) {
         $segments[] = $segment_filter;
       } else {
         $special_segment_filters[] = $segment_filter;

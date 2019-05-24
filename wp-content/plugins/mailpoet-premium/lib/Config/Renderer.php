@@ -3,11 +3,13 @@
 namespace MailPoet\Premium\Config;
 
 use MailPoet\Twig;
-use Twig_Environment as TwigEnv;
-use Twig_Lexer as TwigLexer;
-use Twig_Loader_Filesystem as TwigFileSystem;
+use MailPoetVendor\Twig\Environment as TwigEnv;
+use MailPoetVendor\Twig\Extension\DebugExtension;
+use MailPoetVendor\Twig\Lexer as TwigLexer;
+use MailPoetVendor\Twig\Loader\FilesystemLoader as TwigFileSystem;
 
-if(!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) exit;
+use MailPoet\WP\Functions as WPFunctions;
 
 class Renderer {
   protected $cache_path;
@@ -25,15 +27,15 @@ class Renderer {
     $file_system = new TwigFileSystem(Env::$views_path);
     $this->renderer = new TwigEnv(
       $file_system,
-      array(
+      [
         'cache' => $this->detectCache(),
         'debug' => $this->debugging_enabled,
-        'auto_reload' => true
-      )
+        'auto_reload' => true,
+      ]
     );
 
-    $this->assets_manifest_js = $this->getAssetManifest(Env::$assets_path . '/js/manifest.json');
-    $this->assets_manifest_css = $this->getAssetManifest(Env::$assets_path . '/css/manifest.json');
+    $this->assets_manifest_js = $this->getAssetManifest(Env::$assets_path . '/dist/js/manifest.json');
+    $this->assets_manifest_css = $this->getAssetManifest(Env::$assets_path . '/dist/css/manifest.json');
 
     $this->setupDebug();
     $this->setupTranslations();
@@ -66,21 +68,21 @@ class Renderer {
   }
 
   function setupGlobalVariables() {
-    $this->renderer->addExtension(new Twig\Assets(array(
+    $this->renderer->addExtension(new Twig\Assets([
       'version' => Env::$version,
       'assets_url' => Env::$assets_url,
       'assets_manifest_js' => $this->assets_manifest_js,
-      'assets_manifest_css' => $this->assets_manifest_css
-    )));
+      'assets_manifest_css' => $this->assets_manifest_css,
+    ]));
   }
 
   function setupSyntax() {
-    $lexer = new TwigLexer($this->renderer, array(
-      'tag_comment' => array('<#', '#>'),
-      'tag_block' => array('<%', '%>'),
-      'tag_variable' => array('<%=', '%>'),
-      'interpolation' => array('%{', '}')
-    ));
+    $lexer = new TwigLexer($this->renderer, [
+      'tag_comment' => ['<#', '#>'],
+      'tag_block' => ['<%', '%>'],
+      'tag_variable' => ['<%=', '%>'],
+      'interpolation' => ['%{', '}'],
+    ]);
     $this->renderer->setLexer($lexer);
   }
 
@@ -89,17 +91,17 @@ class Renderer {
   }
 
   function setupDebug() {
-    if($this->debugging_enabled) {
-      $this->renderer->addExtension(new \Twig_Extension_Debug());
+    if ($this->debugging_enabled) {
+      $this->renderer->addExtension(new DebugExtension());
     }
   }
 
-  function render($template, $context = array()) {
+  function render($template, $context = []) {
     try {
       return $this->renderer->render($template, $context);
-    } catch(\RuntimeException $e) {
+    } catch (\RuntimeException $e) {
       throw new \Exception(sprintf(
-        __('Failed to render template "%s". Please ensure the template cache folder "%s" exists and has write permissions. Terminated with error: "%s"'),
+        WPFunctions::get()->__('Failed to render template "%s". Please ensure the template cache folder "%s" exists and has write permissions. Terminated with error: "%s"'),
         $template,
         $this->cache_path,
         $e->getMessage()
@@ -108,12 +110,16 @@ class Renderer {
   }
 
   function addGlobal($key, $value) {
-    return $this->renderer->addGlobal($key, $value);
+    $this->renderer->addGlobal($key, $value);
   }
 
   function getAssetManifest($manifest_file) {
-    return (is_readable($manifest_file)) ?
-      json_decode(file_get_contents($manifest_file), true) :
-      false;
+    if (is_readable($manifest_file)) {
+      $contents = file_get_contents($manifest_file);
+      if (is_string($contents)) {
+        return json_decode($contents, true);
+      }
+    }
+    return false;
   }
 }

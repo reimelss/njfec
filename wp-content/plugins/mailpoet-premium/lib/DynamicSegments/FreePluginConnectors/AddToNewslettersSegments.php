@@ -34,14 +34,14 @@ class AddToNewslettersSegments {
   }
 
   private function buildResult($dynamic_segments) {
-    $result = array();
-    foreach($dynamic_segments as $dynamic_segment) {
-      $result[] = array(
+    $result = [];
+    foreach ($dynamic_segments as $dynamic_segment) {
+      $result[] = [
         'id' => $dynamic_segment->id,
         'name' => $dynamic_segment->name,
         'subscribers' => $this->subscribersCountLoader->getSubscribersCount($dynamic_segment),
-        'deleted_at' => $dynamic_segment->deleted_at
-      );
+        'deleted_at' => $dynamic_segment->deleted_at,
+      ];
     }
     return $result;
   }

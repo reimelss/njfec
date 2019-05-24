@@ -28,19 +28,19 @@ class FormDataMapper {
   }
 
   private function createDynamicSegment($data) {
-    $dataToSave = array(
+    $dataToSave = [
       'name' => isset($data['name']) ? $data['name'] : '',
       'description' => isset($data['description']) ? $data['description'] : '',
-    );
+    ];
     $dynamic_segment = null;
-    if(isset($data['id'])) {
+    if (isset($data['id'])) {
       $dynamic_segment = DynamicSegment::findOne($data['id']);
     }
-    if(!$dynamic_segment) {
+    if ($dynamic_segment instanceof DynamicSegment) {
+      $dynamic_segment->set($dataToSave);
+    } else {
       $dynamic_segment = DynamicSegment::create();
       $dynamic_segment->hydrate($dataToSave);
-    } else {
-      $dynamic_segment->set($dataToSave);
     }
     return $dynamic_segment;
   }
@@ -52,10 +52,10 @@ class FormDataMapper {
    * @throws InvalidSegmentTypeException
    */
   private function getFilters(array $data) {
-    switch($this->getSegmentType($data)) {
+    switch ($this->getSegmentType($data)) {
       case 'userRole':
-        if(!$data['wordpressRole']) throw new InvalidSegmentTypeException('Missing role', InvalidSegmentTypeException::MISSING_ROLE);
-        return array(new UserRole($data['wordpressRole']));
+        if (!$data['wordpressRole']) throw new InvalidSegmentTypeException('Missing role', InvalidSegmentTypeException::MISSING_ROLE);
+        return [new UserRole($data['wordpressRole'])];
       case 'email':
         return $this->createEmail($data);
       case 'woocommerce':
@@ -72,7 +72,7 @@ class FormDataMapper {
    * @throws InvalidSegmentTypeException
    */
   private function getSegmentType(array $data) {
-    if(!isset($data['segmentType'])) {
+    if (!isset($data['segmentType'])) {
       throw new InvalidSegmentTypeException('Segment type is not set', InvalidSegmentTypeException::MISSING_TYPE);
     }
     return $data['segmentType'];
@@ -85,12 +85,12 @@ class FormDataMapper {
    * @throws InvalidSegmentTypeException
    */
   private function createEmail(array $data) {
-    if(empty($data['action'])) throw new InvalidSegmentTypeException('Missing action', InvalidSegmentTypeException::MISSING_ACTION);
-    if(empty($data['newsletter_id'])) throw new InvalidSegmentTypeException('Missing newsletter id', InvalidSegmentTypeException::MISSING_NEWSLETTER_ID);
-    if(isset($data['link_id'])) {
-      return array(new EmailAction($data['action'], $data['newsletter_id'], $data['link_id']));
+    if (empty($data['action'])) throw new InvalidSegmentTypeException('Missing action', InvalidSegmentTypeException::MISSING_ACTION);
+    if (empty($data['newsletter_id'])) throw new InvalidSegmentTypeException('Missing newsletter id', InvalidSegmentTypeException::MISSING_NEWSLETTER_ID);
+    if (isset($data['link_id'])) {
+      return [new EmailAction($data['action'], $data['newsletter_id'], $data['link_id'])];
     } else {
-      return array(new EmailAction($data['action'], $data['newsletter_id']));
+      return [new EmailAction($data['action'], $data['newsletter_id'])];
     }
   }
 
@@ -101,14 +101,14 @@ class FormDataMapper {
    * @throws InvalidSegmentTypeException
    */
   private function createWooCommerce($data) {
-    if(empty($data['action'])) throw new InvalidSegmentTypeException('Missing action', InvalidSegmentTypeException::MISSING_ACTION);
-    switch($data['action']) {
+    if (empty($data['action'])) throw new InvalidSegmentTypeException('Missing action', InvalidSegmentTypeException::MISSING_ACTION);
+    switch ($data['action']) {
       case WooCommerceCategory::ACTION_CATEGORY:
-        if(!isset($data['category_id'])) throw new InvalidSegmentTypeException('Missing category', InvalidSegmentTypeException::MISSING_CATEGORY_ID);
-        return array(new WooCommerceCategory($data['category_id']));
+        if (!isset($data['category_id'])) throw new InvalidSegmentTypeException('Missing category', InvalidSegmentTypeException::MISSING_CATEGORY_ID);
+        return [new WooCommerceCategory($data['category_id'])];
       case WooCommerceProduct::ACTION_PRODUCT:
-        if(!isset($data['product_id'])) throw new InvalidSegmentTypeException('Missing product', InvalidSegmentTypeException::MISSING_PRODUCT_ID);
-        return array(new WooCommerceProduct($data['product_id']));
+        if (!isset($data['product_id'])) throw new InvalidSegmentTypeException('Missing product', InvalidSegmentTypeException::MISSING_PRODUCT_ID);
+        return [new WooCommerceProduct($data['product_id'])];
       default:
         throw new \InvalidArgumentException("Unknown action " . $data['action']);
     }
