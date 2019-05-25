@@ -1,0 +1,30 @@
+/*
+Theme Name: New Jersey District Export Council Child
+Theme URI: http://www.inframe.cadrol.com
+Description: A fully responsive theme for the New Jersey DEC. Looks great on all devices (desktop, tablet, mobile phone)!
+Version: 1.23
+Author: The Cadrol Group
+Author URI: http://www.cadrol.com/
+Tags: black, blue, brown, one-column, two-columns, three-columns, right-sidebar, left-sidebar, custom-colors, custom-background, custom-menu, editor-style, theme-options, threaded-comments, translation-ready, featured-images, full-width-template
+License: GNU General Public License, Version 2 (or newer)
+License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+Template:  designfolio
+Text Domain:  designfolio-child
+
+The NJDEC theme was designed and created by Joe Ewing.
+Please visit <a href="http://www.cadrol.com/">The Cadrol Group</a> for more great corporate implementations!
+*/
+
+/* Normalize CSS
+-------------------------------------------------------------- */
+footer {
+    background: #283D69;
+}
+footer .textwidget p {
+    padding: 0px;
+    margin: 0px;
+    line-height: 1.1em;
+}
+footer #custom_html-2 {
+    margin: 0px 0px 20px 0px;
+}
