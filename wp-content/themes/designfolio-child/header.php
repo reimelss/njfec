@@ -36,7 +36,10 @@
 
 <div id="logo-wrap">
 
-<div id="site-description"><a href="<?php echo get_settings('home'); ?>"><img src="<?php echo get_option('home'); ?>/wp-content/uploads/2017/11/NJDEC-Logo-For-Dark-BG.png" alt="NJ District Export Council" width="300" /></a>
+<div id="site-description">
+	<a href="<?php echo get_settings('home'); ?>">
+		<img src="<?php echo get_option('home'); ?>/wp-content/uploads/2017/11/NJDEC-Logo-For-Dark-BG.png" alt="NJ District Export Council" width="300" />
+	</a>
  </div>
 
 
