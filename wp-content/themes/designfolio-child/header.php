@@ -38,7 +38,8 @@
 
 <div id="site-description">
 	<a href="<?php echo get_settings('home'); ?>">
-		<img src="<?php echo get_option('home'); ?>/wp-content/uploads/2017/11/NJDEC-Logo-For-Dark-BG.png" alt="NJ District Export Council" width="300" />
+		<!-- <img src="<?php echo get_option('home'); ?>/wp-content/uploads/2017/11/NJDEC-Logo-For-Dark-BG.png" alt="NJ District Export Council" width="300" /> -->
+		<img src="<?php echo get_option('home'); ?>/wp-content/uploads/2019/06/DEC_Logo-RGB-NEW_JERSEY.jpg" alt="NJ District Export Council" width="300" />
 	</a>
  </div>
 
