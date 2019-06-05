@@ -13,6 +13,11 @@
 	</footer>
 
 </div><!-- #body-container -->
+<style type="text/css">
+	.sponserSection {
+	    background: #fff;
+	}
+</style>
 <?php wp_footer(); ?>
 
 <?php PC_Hooks::pc_after_closing_footer_tag(); /* Framework hook wrapper */ ?>
