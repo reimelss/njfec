@@ -17,6 +17,11 @@
 	.sponserSection {
 	    background: #fff;
 	}
+	div.logooos div.logooos_item a {
+		width: 50% !important;
+		height: 50% !important;
+		background-size: 50% !important;
+	}
 </style>
 <?php wp_footer(); ?>
 
