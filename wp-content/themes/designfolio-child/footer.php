@@ -2,7 +2,7 @@
 
 <div class="top_footer" style="clear: both;">
 	<div class="sponserSection">
-		<?php echo do_shortcode('[logooos columns="4" itemsheightpercentage="1.00" backgroundcolor="transparent" layout="slider" category="46" orderby="date" order="DESC" marginbetweenitems="25px" tooltip="enabled" responsive="enabled" grayscale="disabled" border="disabled" borderradius="logooos_no_radius" autoplay="true" transitioneffect="scroll" scrollduration="1000" pauseduration="9000" buttonsbordercolor="#DCDCDC" buttonsbgcolor="#FFFFFF" buttonsarrowscolor="lightgray" ]'); ?>
+		<?php echo do_shortcode('[logooos columns="4" itemsheightpercentage="0.60" backgroundcolor="transparent" layout="slider" category="46" orderby="date" order="DESC" marginbetweenitems="25px" tooltip="enabled" responsive="enabled" grayscale="disabled" border="disabled" borderradius="logooos_no_radius" autoplay="true" transitioneffect="scroll" scrollduration="1000" pauseduration="9000" buttonsbgcolor="#FFFFFF" buttonsarrowscolor="darkgray" ]'); ?>
 	</div>
 </div>
 
@@ -17,11 +17,11 @@
 	.sponserSection {
 	    background: #fff;
 	}
-	div.logooos div.logooos_item a {
+	/*div.logooos div.logooos_item a {
 		width: 50% !important;
 		height: 50% !important;
 		background-size: 50% !important;
-	}
+	}*/
 </style>
 <?php wp_footer(); ?>
 
