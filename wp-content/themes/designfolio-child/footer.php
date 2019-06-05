@@ -19,6 +19,8 @@
 <style type="text/css">
 	.top_footer {
 	    background: #fff;
+	    padding-top: 2em;
+	    padding-bottom: 2em;
 	}
 	.sponserSection div.logooos div.logooos_item a {
 		background-size: contain !important;
